@@ -1,0 +1,5 @@
+{
+    "python.linting.pylintEnabled": true,
+    "editor.fontSize": 18,
+    "terminal.integrated.fontSize": 15
+}
