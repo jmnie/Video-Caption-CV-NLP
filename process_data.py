@@ -58,7 +58,17 @@ def loadGloveModel(gloveFile='/home/jiaming/Downloads/dataset/glove.6B/glove.6B.
     print("Done.",len(model)," words loaded!")
     return model
 
+def loadGloveModel_2(gloveFile='/home/jiaming/Downloads/dataset/glove.6B/glove.6B.50d.txt'):
+    print("Loading Glove Model")
+    f = open(gloveFile,'r')
+    model = set()
+    for line in f:
+        splitLine = line.split()
+        word = splitLine[0]
+        model.add(word)
 
+    print("Done.",len(model)," words loaded!")
+    return model
 
 ## too slow here
 def embed_to_word(embd,model):
@@ -267,9 +277,10 @@ def filter_sentence_2(line,glove_model):
     new_words = []
     for i in range(len(words)):
         if words[i] not in glove_model:
-            new_word = suggest(words[i])[0][0]
-            if words[i] in glove_model:
-                new_words.append(new_word)
+            #new_word = suggest(words[i])[0][0]
+            #if words[i] in glove_model:
+            new_word = simple_fuzzy_checking(words[i],glove_model)
+            new_words.append(new_word)
         else:
             new_words.append(words[i])
     return new_words
@@ -334,72 +345,102 @@ def process_data(trainval_path='/HDD/dl_proj/msr_vtt/train_val_videodatainfo.jso
         json.dump(test_dict,fp)
 
 
-    #sentences = []
-    #for item in attribute['sentences']:
-    #    sentences.append(item['caption'])
-    
-    #print("\n >> Filter Lines")
-    
-
-    #sentences = [filter_sentence(line) for line in sentences]
-    
-
-
     """
     Change the word 
 
     """
-    # words = set()
-    # for line in sentences:
-    #     for word in line:
-    #         words.add(word)
+  
 
-    # gloveFile='/HDD/dl_proj/glove/glove.840B.300d.txt'
-    # print("Loading Glove Model")
-    # f = open(gloveFile,'r')
-    # glove_words = set()
-    # for line in f:
-    #     splitLine = line.split()
-    #     word_ = splitLine[0]
-    #     glove_words.add(word_)
-    #     #embedding = np.array([float(val) for val in splitLine[1:]])
-    #     #model[word] = embedding
-    # i = 0
-    # list_ = []
-    # for word in words:
-    #     if word not in glove_words:
-    #         #i += 1
-    #         #list_.append(word)
-    #         #print(word)
-    #         nword = suggest(word)[0][0]
-    #         if nword not in glove_words:
-    #             #print(nword)
-    #             list_.append(nword)
-    #             i += 1
-
-    # print(list_)
-    # print(i)
-
+def new_annotation():
+    with open('./annotation/train.json','r') as fp:
+        train_ = json.load(fp)
     
+    with open('./annotation/test.json','r') as fp:
+        test_ = json.load(fp)
+    
+    with open('./annotation/val.json','r') as fp:
+        val_ = json.load(fp)
+    
+    length = dict()
+    words = set()
+    captions = []
 
+    for item in train_:
+        token = train_[item]['caption']
+        
+        if len(token) not in length:
+            length[len(token)] = 1
+        else:
+            length[len(token)] += 1
+
+        for word in token:
+            words.add(word)
+        
+        # if len(token) < 4:
+        #     print(token)
+
+
+    for item in test_:
+        token = test_[item]['caption']
+
+        if len(token) not in length:
+            length[len(token)] = 1
+        else:
+            length[len(token)] += 1
+
+        for word in token:
+            words.add(word)
+
+        # if len(token) < 4:
+        #     print(token)
+
+    for item in val_:
+        token = val_[item]['caption']
+        
+        if len(token) not in length:
+            length[len(token)] = 1
+        else:
+            length[len(token)] += 1
+
+        for word in token:
+            words.add(word)
+        
+        # if len(token) < 4:
+        #     print(token)
+    
+    print("Total Number of words :",len(words))
+
+    total = np.sum(np.array(list(length.values())))
+    print("Total :",total)
+
+    len_ = 5
+    i = 0
+    for key in length:
+        #print(key,length[key])
+        if key < len_:
+            i += length[key]
+    
+    print("Length < ",len_,":",i)
+
+from fuzzywuzzy import fuzz
+
+def simple_fuzzy_checking(word,glove_model):
+    glove_model = loadGloveModel_2()
+    ratio = 0
+    simliar_word = None
+
+    for _ in glove_model:
+        r = fuzz.ratio(word,_)
+        if r > ratio:
+            ratio = r
+            simliar_word = _
+
+    return simliar_word
 
 def main():
-    #res_1 = read_json(path='/home/jiaming/Downloads/dataset/msr-vtt/test_videodatainfo.json')
     print("--")
     process_data()
-    #res_2 = read_json('/home/jiaming/Downloads/dataset/msr-vtt/train_val_annotation/train_val_videodatainfo.json')
-    #res = res_1 | res_2
-    #print(len(res))
-
-    #import nltk
-    #from nltk import sent_tokenize
-
-    #test = "an ad for a cooking show (home aux fourne aux) is shown while the camera pans to various video clips of someone preparing what appears to be tarts in a kitchen"
-    #test = sent_tokenize(test)
-    #print(test[0])
-    # test_dict = {'key1':2}
-    # test_dict['key2'] = 'sss'
-    # print(test_dict['key2'])
+    #new_annotation()
 
     
 
