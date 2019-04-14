@@ -99,15 +99,16 @@ def glove_example():
     
 
 def main():
-    res_1 = read_json(path='/home/jiaming/Downloads/dataset/msr-vtt/test_videodatainfo.json')
+    #res_1 = read_json(path='/home/jiaming/Downloads/dataset/msr-vtt/test_videodatainfo.json')
     print("--")
-    res_2 = read_json('/home/jiaming/Downloads/dataset/msr-vtt/train_val_annotation/train_val_videodatainfo.json')
-    res = res_1 | res_2
-    print(len(res))
+    #res_2 = read_json('/home/jiaming/Downloads/dataset/msr-vtt/train_val_annotation/train_val_videodatainfo.json')
+    #res = res_1 | res_2
+    #print(len(res))
 
+    from nltk import sent_tokenize
     test = "an ad for a cooking show (home aux fourne aux) is shown while the camera pans to various video clips of someone preparing what appears to be tarts in a kitchen"
-    
-    print(test)
+    test = sent_tokenize(test)
+    print(test[0])
 
     #model = loadGloveModel()
     # print("Loading Glove Model")
