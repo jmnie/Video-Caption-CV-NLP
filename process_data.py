@@ -267,9 +267,11 @@ def filter_sentence_2(line,glove_model):
     new_words = []
     for i in range(len(words)):
         if words[i] not in glove_model:
-            words[i] = suggest(words[i])[0][0]
+            new_word = suggest(words[i])[0][0]
             if words[i] in glove_model:
-                new_words.append(words[i])
+                new_words.append(new_word)
+        else:
+            new_words.append(words[i])
     return new_words
 
 def process_data(trainval_path='/HDD/dl_proj/msr_vtt/train_val_videodatainfo.json',test_path='/HDD/dl_proj/msr_vtt/test_videodatainfo.json'):
@@ -296,15 +298,15 @@ def process_data(trainval_path='/HDD/dl_proj/msr_vtt/train_val_videodatainfo.jso
 
     for item in trainval_att['videos']:
         if item['split'] == 'train':
-            train_dict[item['video_id']] = {'category': item['category'],
-                                            'caption': []}
+            train_dict[item['video_id']] = {'category': item['category']
+                                            }
         else:
-            val_dict[item['video_id']] = {'category': item['category'],
-                                            'caption': []}
+            val_dict[item['video_id']] = {'category': item['category']
+                                            }
     
     for item in test_att['videos']:
-        test_dict[item['video_id']] = {'category': item['category'],
-                                            'caption': []}
+        test_dict[item['video_id']] = {'category': item['category']
+                                        }
 
     for item in trainval_att['sentences']:
         line = item['caption']
@@ -395,9 +397,11 @@ def main():
     #test = "an ad for a cooking show (home aux fourne aux) is shown while the camera pans to various video clips of someone preparing what appears to be tarts in a kitchen"
     #test = sent_tokenize(test)
     #print(test[0])
+    # test_dict = {'key1':2}
+    # test_dict['key2'] = 'sss'
+    # print(test_dict['key2'])
+
     
-
-
 
 if __name__ == '__main__':
     main()
