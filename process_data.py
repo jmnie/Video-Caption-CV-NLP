@@ -10,7 +10,7 @@ import re
 MAX_WORDS = 100
 VOCAB_SIZE = 2000
 
-EN_BLACKLIST = '!#$%&()*+,-./:;<=>?@[]^_`{|}~'
+
 
 def read_json(path='/home/jiaming/Downloads/dataset/msr-vtt/test_videodatainfo.json'):
     with open(path) as file:
@@ -22,7 +22,7 @@ def read_json(path='/home/jiaming/Downloads/dataset/msr-vtt/test_videodatainfo.j
     #print(attribute['videos'][0])
     #print(attribute['sentences'][0])
 
-    EN_BLACKLIST = '!#$%&()*+,-./:;<=>?@[]^_`{|}~'
+    EN_BLACKLIST = '!#$%&()*+-./:;<=>?@[]^_`{|}~'
     vocab = set()
     caption_length = dict()
     for item in attribute['sentences']:
@@ -96,49 +96,308 @@ def glove_example():
     vector = glove.word_vectors[glove.dictionary['hello']]
     print(vector)
     print(glove.dictionary['hello'])
+
+EN_WHITELIST = '0123456789abcdefghijklmnopqrstuvwxyz ' # space is included in whitelist
+EN_BLACKLIST = '!"#$%&()+,-./;~'
+
+limit = {
+        'maxq' : 25,
+        'minq' : 2,
+        'maxa' : 25,
+        'mina' : 2
+        }
+
+UNK = 'unk'
+VOCAB_SIZE = 30000
+
+
+import random
+
+import nltk
+import itertools
+from collections import defaultdict
+
+import numpy as np
+
+import pickle
+from autocorrect import spell
+import re   
+
+
+def filter_line(line,whitelist):
+    line = line.replace("-"," ")
+    return ''.join([ch for ch in line if ch in whitelist])
+
+def spell_check(sentences):
+    for sen in sentences:
+        for i in range(len(sen)):
+            sen[i] = spell(sen[i])
+
+
+'''
+ filter too long and too short sequences
+    return tuple( filtered_ta, filtered_en )
+'''
+def filter_data(sequences):
+    filtered_q, filtered_a = [], []
+    raw_data_len = len(sequences)//2
+
+    for i in range(0, len(sequences), 2):
+        qlen, alen = len(sequences[i].split(' ')), len(sequences[i+1].split(' '))
+        if qlen >= limit['minq'] and qlen <= limit['maxq']:
+            if alen >= limit['mina'] and alen <= limit['maxa']:
+                filtered_q.append(sequences[i])
+                filtered_a.append(sequences[i+1])
+
+    # print the fraction of the original data, filtered
+    filt_data_len = len(filtered_q)
+    filtered = int((raw_data_len - filt_data_len)*100/raw_data_len)
+    print(str(filtered) + '% filtered from original data')
+
+    return filtered_q, filtered_a
+
+'''
+ read list of words, create index to word,
+  word to index dictionaries
+    return tuple( vocab->(word, count), idx2w, w2idx )
+'''
+def index_(tokenized_sentences, vocab_size):
+    # get frequency distribution
+    freq_dist = nltk.FreqDist(itertools.chain(*tokenized_sentences))
+    # get vocabulary of 'vocab_size' most used words
+    vocab = freq_dist.most_common(vocab_size)
+    # index2word
+    index2word = ['_'] + [UNK] + [ x[0] for x in vocab ]
+    # word2index
+    word2index = dict([(w,i) for i,w in enumerate(index2word)] )
+    return index2word, word2index, freq_dist
+
+'''
+ filter based on number of unknowns (words not in vocabulary)
+  filter out the worst sentences
+'''
+def filter_unk(qtokenized, atokenized, w2idx):
+    data_len = len(qtokenized)
+
+    filtered_q, filtered_a = [], []
+
+    for qline, aline in zip(qtokenized, atokenized):
+        unk_count_q = len([ w for w in qline if w not in w2idx ])
+        unk_count_a = len([ w for w in aline if w not in w2idx ])
+        if unk_count_a <= 2:
+            if unk_count_q > 0:
+                if unk_count_q/len(qline) > 0.2:
+                    pass
+            filtered_q.append(qline)
+            filtered_a.append(aline)
+
+    # print the fraction of the original data, filtered
+    filt_data_len = len(filtered_q)
+    filtered = int((data_len - filt_data_len)*100/data_len)
+    print(str(filtered) + '% filtered from original data')
+
+    return filtered_q, filtered_a
+
+'''
+ create the final dataset : 
+  - convert list of items to arrays of indices
+  - add zero padding
+      return ( [array_en([indices]), array_ta([indices]) )
+ 
+'''
+def zero_pad(qtokenized, atokenized, w2idx):
+    # num of rows
+    data_len = len(qtokenized)
+
+    # numpy arrays to store indices
+    idx_q = np.zeros([data_len, limit['maxq']], dtype=np.int32) 
+    idx_a = np.zeros([data_len, limit['maxa']], dtype=np.int32)
+
+    for i in range(data_len):
+        q_indices = pad_seq(qtokenized[i], w2idx, limit['maxq'])
+        a_indices = pad_seq(atokenized[i], w2idx, limit['maxa'])
+
+        #print(len(idx_q[i]), len(q_indices))
+        #print(len(idx_a[i]), len(a_indices))
+        idx_q[i] = np.array(q_indices)
+        idx_a[i] = np.array(a_indices)
+
+    return idx_q, idx_a
+
+
+'''
+ replace words with indices in a sequence
+  replace with unknown if word not in lookup
+    return [list of indices]
+'''
+def pad_seq(seq, lookup, maxlen):
+    indices = []
+    for word in seq:
+        if word in lookup:
+            indices.append(lookup[word])
+        else:
+            indices.append(lookup[UNK])
+    return indices + [0]*(maxlen - len(seq))
+
+from nltk import sent_tokenize
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem.porter import PorterStemmer
+import string 
+from pattern.en import suggest
+
+
+def filter_sentence(line):
+    line = filter_line(line,EN_WHITELIST)
+    #line = line.lower()
+    tokens = word_tokenize(line)
+    # convert to lower case
+    tokens = [w.lower() for w in tokens]
+
+    table = str.maketrans('', '', string.punctuation)
+    stripped = [w.translate(table) for w in tokens]
+
+    words = [word for word in stripped if word.isalpha()]
+    #porter = PorterStemmer()
+    #stemmed = [porter.stem(word) for word in words]
+    return words
+
+def filter_sentence_2(line,glove_model):
+    words = filter_sentence(line)
+    new_words = []
+    for i in range(len(words)):
+        if words[i] not in glove_model:
+            words[i] = suggest(words[i])[0][0]
+            if words[i] in glove_model:
+                new_words.append(words[i])
+    return new_words
+
+def process_data(trainval_path='/HDD/dl_proj/msr_vtt/train_val_videodatainfo.json',test_path='/HDD/dl_proj/msr_vtt/test_videodatainfo.json'):
     
+    gloveFile='/HDD/dl_proj/glove/glove.840B.300d.txt'
+    print("Loading Glove Model")
+    f = open(gloveFile,'r')
+    glove_words = set()
+
+    for line in f:
+        splitLine = line.split()
+        word_ = splitLine[0]
+        glove_words.add(word_)
+
+    with open(trainval_path) as file:
+        trainval_att = json.load(file)
+    
+    with open(test_path) as file:
+        test_att = json.load(file)
+    
+    train_dict = dict()
+    val_dict = dict()
+    test_dict = dict()
+
+    for item in trainval_att['videos']:
+        if item['split'] == 'train':
+            train_dict[item['video_id']] = {'category': item['category'],
+                                            'caption': []}
+        else:
+            val_dict[item['video_id']] = {'category': item['category'],
+                                            'caption': []}
+    
+    for item in test_att['videos']:
+        test_dict[item['video_id']] = {'category': item['category'],
+                                            'caption': []}
+
+    for item in trainval_att['sentences']:
+        line = item['caption']
+        line = filter_sentence_2(line,glove_words)
+        if item['video_id'] in train_dict:
+            train_dict[item['video_id']]['caption'] = line
+        else:
+            val_dict[item['video_id']]['caption'] = line
+    
+    for item in test_att['sentences']:
+        line = item['caption']
+        line = filter_sentence_2(line,glove_words)
+        test_dict[item['video_id']]['caption'] = line
+    
+    """
+    Save these dictionaries
+    """
+    with open('./annotation/train.json','w') as fp:
+        json.dump(train_dict,fp)
+    
+    with open('./annotation/val.json','w') as fp:
+        json.dump(val_dict,fp)
+    
+    with open('./annotation/test.json','w') as fp:
+        json.dump(test_dict,fp)
+
+
+    #sentences = []
+    #for item in attribute['sentences']:
+    #    sentences.append(item['caption'])
+    
+    #print("\n >> Filter Lines")
+    
+
+    #sentences = [filter_sentence(line) for line in sentences]
+    
+
+
+    """
+    Change the word 
+
+    """
+    # words = set()
+    # for line in sentences:
+    #     for word in line:
+    #         words.add(word)
+
+    # gloveFile='/HDD/dl_proj/glove/glove.840B.300d.txt'
+    # print("Loading Glove Model")
+    # f = open(gloveFile,'r')
+    # glove_words = set()
+    # for line in f:
+    #     splitLine = line.split()
+    #     word_ = splitLine[0]
+    #     glove_words.add(word_)
+    #     #embedding = np.array([float(val) for val in splitLine[1:]])
+    #     #model[word] = embedding
+    # i = 0
+    # list_ = []
+    # for word in words:
+    #     if word not in glove_words:
+    #         #i += 1
+    #         #list_.append(word)
+    #         #print(word)
+    #         nword = suggest(word)[0][0]
+    #         if nword not in glove_words:
+    #             #print(nword)
+    #             list_.append(nword)
+    #             i += 1
+
+    # print(list_)
+    # print(i)
+
+    
+
 
 def main():
     #res_1 = read_json(path='/home/jiaming/Downloads/dataset/msr-vtt/test_videodatainfo.json')
     print("--")
+    process_data()
     #res_2 = read_json('/home/jiaming/Downloads/dataset/msr-vtt/train_val_annotation/train_val_videodatainfo.json')
     #res = res_1 | res_2
     #print(len(res))
 
-    from nltk import sent_tokenize
-    test = "an ad for a cooking show (home aux fourne aux) is shown while the camera pans to various video clips of someone preparing what appears to be tarts in a kitchen"
-    test = sent_tokenize(test)
-    print(test[0])
+    #import nltk
+    #from nltk import sent_tokenize
 
-    #model = loadGloveModel()
-    # print("Loading Glove Model")
-    # f = open('/home/jiaming/Downloads/dataset/glove.840B.300d.txt','r')
-    # #model = {}
+    #test = "an ad for a cooking show (home aux fourne aux) is shown while the camera pans to various video clips of someone preparing what appears to be tarts in a kitchen"
+    #test = sent_tokenize(test)
+    #print(test[0])
+    
 
-    # new_word = set()
 
-    # for line in f:
-    #     splitLine = line.split()
-    #     word = splitLine[0]
-    #     new_word.add(word)
-    #     #embedding = np.array([float(val) for val in splitLine[1:]])
-    #     #model[word] = embedding
-
-    # i = 0
-    # for word in res:
-    #     if word not in new_word:
-    #         i += 1
-    #         print(word)
-    # print(i)
-    #test_vector = np.random.uniform(0,0,size=(50))
-    #print(test_vector)
-    #print(test_vector.shape)
-    #res = embed_to_word(test_vector,model)
-    #print(res[0],res[1])
-    # print(len(res_1.keys()))
-    # for word in res_1:
-    #     if res_1[word] > 20:
-    #         print(word,res_1[word])
 
 if __name__ == '__main__':
     main()
