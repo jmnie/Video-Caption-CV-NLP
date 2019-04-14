@@ -425,10 +425,9 @@ def new_annotation():
 from fuzzywuzzy import fuzz
 
 def simple_fuzzy_checking(word,glove_model):
-    glove_model = loadGloveModel_2()
+    #glove_model = loadGloveModel_2()
     ratio = 0
     simliar_word = None
-
     for _ in glove_model:
         r = fuzz.ratio(word,_)
         if r > ratio:
