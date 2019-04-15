@@ -40,10 +40,11 @@ def word2embd(words,glove_model,caption_length,dimension):
     return embd
 
 def opencv_loader(path,frame_count):
+
     videocap = cv2.VideoCapture(path)
     total_frames = videocap.get(cv2.CAP_PROP_FRAME_COUNT)
     fps = int(total_frames/frame_count)
-    
+
     frames = []
     for _ in range(frame_count):
         _f = _ * fps
@@ -100,10 +101,15 @@ class videoFolder(data.Dataset):
         return video_frame,embd
 
 if __name__ == '__main__':
-    video_path = '/home/jiaming/Downloads/dataset/msr-vtt/TestVideo/video9504.mp4'
+    #video_path = '/home/jiaming/Downloads/dataset/msr-vtt/TestVideo/video9504.mp4'
+    video_path = '/HDD/dl_proj/msr_vtt/TestVideo/video7382.mp4'
     frame_count = 30
     frames = opencv_loader(video_path,frame_count)
-
     print(len(frames))
-    print(type(frames[0]),frames[0].shape)
+    #import skvideo.io
+    #import skvideo.datasets
+    #videodata = skvideo.io.vread(video_path)
+
+    #print(videodata.shape)
+    #print(type(frames[0]),frames[0].shape)
 

@@ -352,13 +352,13 @@ def process_data(trainval_path='/HDD/dl_proj/msr_vtt/train_val_videodatainfo.jso
   
 
 def new_annotation():
-    with open('./annotation/train.json','r') as fp:
+    with open('./annotation/train_50d.json','r') as fp:
         train_ = json.load(fp)
     
-    with open('./annotation/test.json','r') as fp:
+    with open('./annotation/test_50d.json','r') as fp:
         test_ = json.load(fp)
     
-    with open('./annotation/val.json','r') as fp:
+    with open('./annotation/val_50d.json','r') as fp:
         val_ = json.load(fp)
     
     length = dict()
@@ -416,7 +416,7 @@ def new_annotation():
     len_ = 5
     i = 0
     for key in length:
-        #print(key,length[key])
+        print(key,length[key])
         if key < len_:
             i += length[key]
     
@@ -439,10 +439,11 @@ def simple_fuzzy_checking(word,glove_model):
 def main():
     print("--")
     #process_data()
-    #new_annotation()
-    glove_model = loadGloveModel_2()
-    word = 'playgrond'
-    best = simple_fuzzy_checking(word,glove_model)
+    new_annotation()
+    # path = '/HDD/dl_proj/glove/glove.6B.50d.txt'
+    # glove_model = loadGloveModel_2(path)
+    # word = 'redblue'
+    # best = simple_fuzzy_checking(word,glove_model)
     print(best)
 
     
