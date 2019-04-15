@@ -4,6 +4,9 @@ import json
 import os
 import numpy as np
 
+WIDTH = 224
+HEIGHT = 224
+
 def make_dataset(rootdir,dict_file):
     with open(dict_file,'r') as fp:
         video_dict = json.load(fp)
@@ -14,7 +17,6 @@ def make_dataset(rootdir,dict_file):
         caption = video_dict[key]['caption']
         item = (path,caption)
         videos.append(item)
-
     return videos
 
 def load_glove_model(gloveFile):
@@ -39,17 +41,19 @@ def word2embd(words,glove_model,caption_length,dimension):
 
 def opencv_loader(path,frame_count):
     videocap = cv2.VideoCapture(path)
-    count = 0
+    total_frames = videocap.get(cv2.CAP_PROP_FRAME_COUNT)
+    fps = int(total_frames/frame_count)
+    
     frames = []
+    for _ in range(frame_count):
+        _f = _ * fps
+        videocap.set(cv2.CAP_PROP_FRAME_COUNT,_f)
 
-    while True:
-        ret, frame = videocap.read()
-        frames.append(frame)
-        count += 1
-        if count == frame_count:
-            break
+        hasFrames,frame = videocap.read()
+        if hasFrames:
+            frames.append(frame)
 
-    return frame
+    return frames
 
 
 class videoFolder(data.Dataset):
@@ -94,3 +98,12 @@ class videoFolder(data.Dataset):
         video_frame = self.transform(video_frame)
         
         return video_frame,embd
+
+if __name__ == '__main__':
+    video_path = '/home/jiaming/Downloads/dataset/msr-vtt/TestVideo/video9504.mp4'
+    frame_count = 30
+    frames = opencv_loader(video_path,frame_count)
+
+    print(len(frames))
+    print(type(frames[0]),frames[0].shape)
+
