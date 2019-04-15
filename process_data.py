@@ -287,7 +287,7 @@ def filter_sentence_2(line,glove_model):
 
 def process_data(trainval_path='/HDD/dl_proj/msr_vtt/train_val_videodatainfo.json',test_path='/HDD/dl_proj/msr_vtt/test_videodatainfo.json'):
     
-    gloveFile='/HDD/dl_proj/glove/glove.840B.300d.txt'
+    gloveFile='/HDD/dl_proj/glove/glove.6B.50d.txt'
     print("Loading Glove Model")
     f = open(gloveFile,'r')
     glove_words = set()
@@ -335,13 +335,13 @@ def process_data(trainval_path='/HDD/dl_proj/msr_vtt/train_val_videodatainfo.jso
     """
     Save these dictionaries
     """
-    with open('./annotation/train.json','w') as fp:
+    with open('./annotation/train_50d.json','w') as fp:
         json.dump(train_dict,fp)
     
-    with open('./annotation/val.json','w') as fp:
+    with open('./annotation/val_50d.json','w') as fp:
         json.dump(val_dict,fp)
     
-    with open('./annotation/test.json','w') as fp:
+    with open('./annotation/test_50d.json','w') as fp:
         json.dump(test_dict,fp)
 
 
