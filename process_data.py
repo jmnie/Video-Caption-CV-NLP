@@ -438,8 +438,12 @@ def simple_fuzzy_checking(word,glove_model):
 
 def main():
     print("--")
-    process_data()
+    #process_data()
     #new_annotation()
+    glove_model = loadGloveModel_2()
+    word = 'playgrond'
+    best = simple_fuzzy_checking(word,glove_model)
+    print(best)
 
     
 
