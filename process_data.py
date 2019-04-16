@@ -444,7 +444,7 @@ def main():
     # glove_model = loadGloveModel_2(path)
     # word = 'redblue'
     # best = simple_fuzzy_checking(word,glove_model)
-    print(best)
+    #print(best)
 
     
 

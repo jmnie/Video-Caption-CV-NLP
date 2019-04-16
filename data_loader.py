@@ -12,8 +12,8 @@ def make_dataset(rootdir,dict_file):
         video_dict = json.load(fp)
     videos = []
     for key in video_dict:
-        key = key + '.mp4'
-        path = os.path.join(rootdir,key)
+        file = key + '.mp4'
+        path = os.path.join(rootdir,file)
         caption = video_dict[key]['caption']
         item = (path,caption)
         videos.append(item)
@@ -39,26 +39,29 @@ def word2embd(words,glove_model,caption_length,dimension):
             embd[i] = glove_model[words[i]]
     return embd
 
-def opencv_loader(path,frame_count):
+def opencv_loader(path,frame_count,img_size):
 
     videocap = cv2.VideoCapture(path)
+    
     total_frames = videocap.get(cv2.CAP_PROP_FRAME_COUNT)
     fps = int(total_frames/frame_count)
-
+    
     frames = []
     for _ in range(frame_count):
         _f = _ * fps
         videocap.set(cv2.CAP_PROP_FRAME_COUNT,_f)
-
         hasFrames,frame = videocap.read()
         if hasFrames:
+            '''
+            Resize the frame
+            '''
+            frame = cv2.resize(frame, (img_size, img_size)) 
             frames.append(frame)
-
-    return frames
+    return np.array(frames)
 
 
 class videoFolder(data.Dataset):
-    def __init__(self, rootdir, dict_file, img_size, frames, gloveFile, caption_length, transform=None,target_transform=None, loader=opencv_loader, word2embd=word2embd):
+    def __init__(self, rootdir, dict_file, frames, gloveFile, caption_length, img_size=240, transform=None,loader=opencv_loader, word2embd=word2embd):
 
         videos = make_dataset(rootdir,dict_file)
 
@@ -90,26 +93,29 @@ class videoFolder(data.Dataset):
             tuple: (image, target) where target is class_index of the target class.
         """
         path, caption = self.videos[idx]
-        video_frame = self.loader(path)
+        video_frame = self.loader(path,self.frames,self.img_size)
         embd = self.word2embd(caption,self.glove_model,self.caption_length,self.dimension)
 
         """
         Preprocess the frame
         """
-        video_frame = self.transform(video_frame)
+        if self.transform is not None:
+            video_frame = self.transform(video_frame)
         
         return video_frame,embd
+    
+    def __len__(self):
+        return len(self.videos)
 
 if __name__ == '__main__':
-    #video_path = '/home/jiaming/Downloads/dataset/msr-vtt/TestVideo/video9504.mp4'
-    video_path = '/HDD/dl_proj/msr_vtt/TestVideo/video7382.mp4'
+    video_path = '/home/jiaming/Downloads/dataset/msr-vtt/TestVideo/video8486.mp4'
+    #video_path = '/HDD/dl_proj/msr_vtt/TestVideo/video7382.mp4'
     frame_count = 30
-    frames = opencv_loader(video_path,frame_count)
-    print(len(frames))
-    #import skvideo.io
-    #import skvideo.datasets
-    #videodata = skvideo.io.vread(video_path)
-
-    #print(videodata.shape)
-    #print(type(frames[0]),frames[0].shape)
+    size = 224
+    frames = opencv_loader(video_path,frame_count,size)
+    print(len(frames),frames.shape)
+    #from PIL import Image
+    #im = Image.fromarray(frames[0])
+    #im.show()
+  
 
