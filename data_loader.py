@@ -10,14 +10,14 @@ HEIGHT = 224
 def make_dataset(rootdir,dict_file):
     with open(dict_file,'r') as fp:
         video_dict = json.load(fp)
-    videos = []
+    videos_ = []
     for key in video_dict:
         file = key + '.mp4'
         path = os.path.join(rootdir,file)
         caption = video_dict[key]['caption']
         item = (path,caption)
-        videos.append(item)
-    return videos
+        videos_.append(item)
+    return videos_
 
 def load_glove_model(gloveFile):
     f = open(gloveFile,'r')
@@ -39,7 +39,7 @@ def word2embd(words,glove_model,caption_length,dimension):
             embd[i] = glove_model[words[i]]
     return embd
 
-def opencv_loader(path,frame_count,img_size):
+def opencv_loader(path,frame_count,img_size=None):
 
     videocap = cv2.VideoCapture(path)
     
@@ -55,7 +55,8 @@ def opencv_loader(path,frame_count,img_size):
             '''
             Resize the frame
             '''
-            frame = cv2.resize(frame, (img_size, img_size)) 
+            if img_size is not None:
+                frame = cv2.resize(frame, (img_size, img_size)) 
             frames.append(frame)
     return np.array(frames)
 
@@ -110,7 +111,7 @@ class videoFolder(data.Dataset):
 if __name__ == '__main__':
     video_path = '/home/jiaming/Downloads/dataset/msr-vtt/TestVideo/video8486.mp4'
     #video_path = '/HDD/dl_proj/msr_vtt/TestVideo/video7382.mp4'
-    frame_count = 30
+    frame_count = 50
     size = 224
     frames = opencv_loader(video_path,frame_count,size)
     print(len(frames),frames.shape)

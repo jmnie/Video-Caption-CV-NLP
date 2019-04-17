@@ -10,41 +10,51 @@ import re
 MAX_WORDS = 100
 VOCAB_SIZE = 2000
 
-
-
 def read_json(path='/home/jiaming/Downloads/dataset/msr-vtt/test_videodatainfo.json'):
     with open(path) as file:
         attribute = json.load(file)
     
-    #print(attribute.keys())
-    #print(attribute['info'].keys())
+    print(attribute.keys())
+    print(attribute['info'].keys())
+    #print(attribute['videos'][0])
+    #print(len(attribute['sentences']))
     #print(attribute['info'].values())
     #print(attribute['videos'][0])
-    #print(attribute['sentences'][0])
+    print(attribute['sentences'][0])
 
-    EN_BLACKLIST = '!#$%&()*+-./:;<=>?@[]^_`{|}~'
-    vocab = set()
-    caption_length = dict()
+    test_dict = dict()
     for item in attribute['sentences']:
-        #item = re.sub(r'!#$%&(),-./:;=@^_`{}~', '', item)
-        caption = item['caption']#.split()
-        caption = re.sub(r'!#$%&(),-./:;=@^_`{}~', '', caption)
-        caption = caption.split()
-        #print(caption)
-
-        if len(caption) in caption_length:
-            caption_length[len(caption)] += 1
+        temp = item['caption'].split()
+        if item['video_id'] not in test_dict:
+            sentence = []
+            #temp = item['caption'].split()
+            sentence.append(temp)
+            test_dict[item['video_id']] = sentence
         else:
-            caption_length[len(caption)] = 1
+            test_dict[item['video_id']].append(temp)
+    
+    for key in test_dict:
+        max_len = np.amax([len(item) for item in test_dict[key]])
+        print(len(test_dict[key]),max_len)
+    # vocab = set()
+    # caption_length = dict()
+    # for item in attribute['sentences']:
+    #     caption = item['caption']#.split()
+    #     caption = caption.split()
+    #     print(caption)
 
-        for word in caption:
-            #word = re.sub(r'!#$%&(),-./:;=@^_`{}~', '', word)
-            vocab.add(word)
+    #     if len(caption) in caption_length:
+    #         caption_length[len(caption)] += 1
+    #     else:
+    #         caption_length[len(caption)] = 1
+
+    #     for word in caption:
+    #         vocab.add(word)
 
     #for key in caption_length:
     #    print(key,caption_length[key])
 
-    return vocab
+    #return vocab
 
 def loadGloveModel(gloveFile='/home/jiaming/Downloads/dataset/glove.6B/glove.6B.50d.txt'):
     print("Loading Glove Model")
@@ -438,8 +448,9 @@ def simple_fuzzy_checking(word,glove_model):
 
 def main():
     print("--")
+    read_json()
     #process_data()
-    new_annotation()
+    #new_annotation()
     # path = '/HDD/dl_proj/glove/glove.6B.50d.txt'
     # glove_model = loadGloveModel_2(path)
     # word = 'redblue'

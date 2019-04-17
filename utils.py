@@ -33,11 +33,11 @@ def tensor_save_bgrimage(tensor, filename, cuda=False):
     tensor = F.concat(r, g, b, dim=0)
     tensor_save_rgbimage(tensor, filename, cuda)
 
-
+""" Change the code """
 def subtract_imagenet_mean_batch(batch):
     """Subtract ImageNet mean pixel-wise from a BGR image."""
     batch = F.swapaxes(batch,0, 1)
-    (r, g, b) = F.split(batch, num_outputs=3, axis=0)
+    (b, g, r) = F.split(batch, num_outputs=3, axis=0)
     r = r - 123.680
     g = g - 116.779
     b = b - 103.939
@@ -45,7 +45,7 @@ def subtract_imagenet_mean_batch(batch):
     batch = F.swapaxes(batch,0, 1)
     return batch
 
-
+""" Change the code """
 def subtract_imagenet_mean_preprocess_batch(batch):
     """Subtract ImageNet mean pixel-wise from a BGR image."""
     batch = F.swapaxes(batch,0, 1)
@@ -90,9 +90,24 @@ class ToTensor(object):
         self.ctx = ctx
 
     def __call__(self, img):
-        img = mx.nd.array(np.array(img).transpose(2, 0, 1).astype('float32'), ctx=self.ctx)
+        img = mx.nd.array(np.array(img).transpose(0, 3, 1, 2).astype('float32'), ctx=self.ctx)
         return img
 
+"""
+OpenCV load video as BGR
+"""
+class normalize(object):
+    def __init__(self, ctx):
+        self.ctx = ctx
+    
+    def __call__(self,img):
+        '''
+        For all the frames
+        '''
+        for _ in range(img.shape[0]):
+            img[_] = subtract_imagenet_mean_batch(img[_])
+        return img 
+        
 
 class Compose(object):
     """Composes several transforms together.
