@@ -282,8 +282,8 @@ def filter_sentence(line):
     #stemmed = [porter.stem(word) for word in words]
     return words
 
-def filter_sentence_2(line,glove_model):
-    words = filter_sentence(line)
+def filter_sentence_2(words,glove_model):
+    #words = filter_sentence(line)
     new_words = []
     for i in range(len(words)):
         if words[i] not in glove_model:
@@ -319,28 +319,52 @@ def process_data(trainval_path='/HDD/dl_proj/msr_vtt/train_val_videodatainfo.jso
 
     for item in trainval_att['videos']:
         if item['split'] == 'train':
-            train_dict[item['video_id']] = {'category': item['category']
+            train_dict[item['video_id']] = {'category': item['category'],
+                                            'caption':[],
                                             }
         else:
-            val_dict[item['video_id']] = {'category': item['category']
+            val_dict[item['video_id']] = {'category': item['category'],
+                                            'caption':[],
                                             }
     
     for item in test_att['videos']:
-        test_dict[item['video_id']] = {'category': item['category']
+        test_dict[item['video_id']] = {'category': item['category'],
+                                        'caption':[],
                                         }
 
     for item in trainval_att['sentences']:
         line = item['caption']
-        line = filter_sentence_2(line,glove_words)
+        line = filter_sentence(line)
+        #line = filter_sentence_2(line,glove_words)
         if item['video_id'] in train_dict:
-            train_dict[item['video_id']]['caption'] = line
+            train_dict[item['video_id']]['caption'].append(line)
         else:
-            val_dict[item['video_id']]['caption'] = line
+            val_dict[item['video_id']]['caption'].append(line)
     
     for item in test_att['sentences']:
         line = item['caption']
-        line = filter_sentence_2(line,glove_words)
-        test_dict[item['video_id']]['caption'] = line
+        #line = filter_sentence_2(line,glove_words)
+        line = filter_sentence(line)
+        test_dict[item['video_id']]['caption'].append(line)
+
+    for video in train_dict:
+        index = np.argmax([len(s) for s in train_dict[video]['caption']])
+        words = train_dict[video]['caption'][index]
+        words = filter_sentence_2(words,glove_words)
+        train_dict[video]['caption'] = words
+    
+    for video in val_dict:
+        index = np.argmax([len(s) for s in val_dict[video]['caption']])
+        words = val_dict[video]['caption'][index]
+        words = filter_sentence_2(words,glove_words)
+        val_dict[video]['caption'] = words
+    
+    for video in test_dict:
+        index = np.argmax([len(s) for s in test_dict[video]['caption']])
+        words = test_dict[video]['caption'][index]
+        words = filter_sentence_2(words,glove_words)
+        test_dict[video]['caption'] = words
+
     
     """
     Save these dictionaries
@@ -423,7 +447,7 @@ def new_annotation():
     total = np.sum(np.array(list(length.values())))
     print("Total :",total)
 
-    len_ = 5
+    len_ = 10
     i = 0
     for key in length:
         print(key,length[key])
@@ -448,9 +472,9 @@ def simple_fuzzy_checking(word,glove_model):
 
 def main():
     print("--")
-    read_json()
+    #read_json()
     #process_data()
-    #new_annotation()
+    new_annotation()
     # path = '/HDD/dl_proj/glove/glove.6B.50d.txt'
     # glove_model = loadGloveModel_2(path)
     # word = 'redblue'
