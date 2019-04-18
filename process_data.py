@@ -325,7 +325,7 @@ def process_data(trainval_path='/HDD/dl_proj/msr_vtt/train_val_videodatainfo.jso
         else:
             val_dict[item['video_id']] = {'category': item['category'],
                                             'caption':[],
-                                            }
+                                         }
     
     for item in test_att['videos']:
         test_dict[item['video_id']] = {'category': item['category'],

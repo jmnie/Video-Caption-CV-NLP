@@ -4,6 +4,8 @@ from mxnet import gluon
 from data_loader import videoFolder
 import utils
 
+
+
 def train():
     print("--")
     root_dir = '/home/jiaming/Downloads/dataset/msr-vtt/TestVideo'
