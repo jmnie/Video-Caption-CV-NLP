@@ -39,6 +39,8 @@ class args_(object):
         self.batch_size = 16
         self.lr = 1e-3
         self.epochs = 30
+        self.load_pretrain = 0
+        
 
 # test = Options().parse()
 # # print(test.add_argument('--batch_size',32))

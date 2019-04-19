@@ -6,67 +6,24 @@ import mxnet as mx
 import mxnet.ndarray as F 
 import numpy as np
 
-from mxnet.gluon.loss import Loss
-
-def _apply_weighting(F, loss, weight=None, sample_weight=None):
-
-    if sample_weight is not None:
-        loss = F.broadcast_mul(loss, sample_weight)
-    if weight is not None:
-        assert isinstance(weight, numeric_types), "weight must be a number"
-        loss = loss * weight
-    return loss
-
-def _reshape_like(F, x, y):
-    return x.reshape(y.shape) if F is ndarray else F.reshape_like(x, y)
-
-
-class L2Loss(Loss):
-    def __init__(self, weight=1., batch_axis=0, **kwargs):
-        super(L2Loss, self).__init__(weight, batch_axis, **kwargs)
-
-    def hybrid_forward(self, F, pred, label, sample_weight=None):
-        label = _reshape_like(F, label, pred)
-        loss = F.square(pred - label)
-        loss = _apply_weighting(F, loss, self._weight/2, sample_weight)
-        return F.sqrt(F.mean(loss, axis=self._batch_axis, exclude=True))
-
-class L2Loss_2(Loss):
-
-    def __init__(self, axis=-1, sparse_label=True, from_logits=False, weight=None, batch_axis=1, **kwargs):
-        super(L2Loss_2, self).__init__(weight, batch_axis, **kwargs)
-        self._axis = axis
-        self._sparse_label = sparse_label
-        self._from_logits = from_logits
-        self.weight = weight
-
-    def hybrid_forward(self, F, pred, label, sample_weight=None):
-
-        loss = F.sum(F.sqrt(F.square(pred - label)), axis=self._batch_axis)
-        #return F.mean(loss, axis=self._batch_axis, exclude=True)
-        return loss
-
-class L2Loss_cos(Loss):
-    def __init__(self, weight=None, batch_axis=0, margin=0, eps=1e-12, **kwargs):
-        super(L2Loss_cos, self).__init__(weight, batch_axis, **kwargs)
-        self._margin = margin
-
-    
-    def hybrid_forward(self, F, pred, label,sample_weight=None):
-        loss = F.sqrt(F.square(F.flatten(pred)-F.flatten(label)))
-        loss = loss.reshape(loss.shape[0],pred.shape[1],pred.shape[2])
-        return F.mean(loss,axis=1)
-    
 def load_pretrain():
-    model = model_zoo.get_mobilenet_v2(0.25)
-    print(model)
-    model.initialize()
+    model = vision.vgg16_bn(pretrained=True)
+
+    new_net = model.features[:-1]
+    #print(type(new_net))
+
     ctx = mx.cpu()
-    X = nd.random.uniform(shape=(32, 50, 3, 128, 128),ctx=ctx)
-    X = nd.transpose(X,(0,1,2,3,4))
+    X = nd.random.uniform(shape=(100, 50, 3, 224, 224),ctx=ctx)
+    one_output = new_net(X[0])
+    print(one_output.shape)
+
     print(X.shape)
-    output = model(X)
-    print(output.shape)
+    result = nd.zeros(shape=(X.shape[0],X.shape[1],one_output.shape[-1]))
+    
+    for i in range(X.shape[0]):
+        result[i] = new_net(X[i])
+
+    print(result.shape)
 
 def test_net():
     model = mx.gluon.nn.Sequential()
@@ -78,26 +35,40 @@ def test_net():
 
     net = lstm_net(50,50)
     net.initialize()
-    output = net(mx.nd.ones((6, 50, 3, 224, 224)))
+    output = net(mx.nd.ones((6, 3, 224, 224)))
     print(output.shape)
 
 
 class lstm_net(gluon.Block):
-    def __init__(self,frames,caption_length):
+    def __init__(self,frames,caption_length,ctx,predtrain_model=None):
         super(lstm_net,self).__init__()
+
         self.frames = frames
         self.caption_length = caption_length
+        self.pretrain_model = pretrain_model
+        self.ctx = ctx
+        
         self.lstm_1 = rnn.LSTM(hidden_size=200,num_layers=2,layout='NTC',bidirectional=False)
         self.lstm_2 = rnn.LSTM(hidden_size=100,num_layers=2,layout='NTC',
         bidirectional=False)
         self.dense = nn.Dense(self.caption_length,flatten=False)
-    
+
     def forward(self, x):
-        input_ = x.reshape(x.shape[0],x.shape[1],x.shape[2]*x.shape[3]*x.shape[4])
+        if self.pretrain_model is not None:
+            new_net = self.pretrain_model[:-1]
+            input_ = mx.nd.zeros(shape=(x.shape[0],x.shape[1],4096),ctx=self.ctx)
+
+            for i in range(x.shape[0]):
+                input_[i] = new_net(x[i])
+
+        else:
+            input_ = x.reshape(x.shape[0],x.shape[1],x.shape[2]*x.shape[3]*x.shape[4])
+
         output_1 = self.lstm_1(input_)
         output_2 = self.lstm_2(output_1)
         dense_1 = self.dense(output_2)
         return dense_1
+
 
 """Change directly from the ResNet code"""
 
@@ -223,7 +194,7 @@ class BottleneckV2(gluon.HybridBlock):
 
 # Nets
 class ResNetV1(gluon.HybridBlock):
-    def __init__(self, block, layers, channels, classes=1000, thumbnail=False, **kwargs):
+    def __init__(self, block, layers, channels, classes=1000, thumbnail=False,caption_length=50,**kwargs):
         super(ResNetV1, self).__init__(**kwargs)
         assert len(layers) == len(channels) - 1
         with self.name_scope():
@@ -242,6 +213,8 @@ class ResNetV1(gluon.HybridBlock):
             self.features.add(nn.GlobalAvgPool3D())
 
             self.output = nn.Dense(classes, in_units=channels[-1])
+            self.output_2 = nn.Dense(caption_length)
+            self.embedding = nn.Embedding(40000,caption_length, weight_initializer=mx.initializer.Uniform())
 
     def _make_layer(self, block, layers, channels, stride, stage_index, in_channels=0):
         layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
@@ -255,10 +228,12 @@ class ResNetV1(gluon.HybridBlock):
     def hybrid_forward(self, F, x):
         x = self.features(x)
         x = self.output(x)
+        x = self.output_2(x)
+        x = self.embedding(x)
         return x
 
 class ResNetV2(gluon.HybridBlock):
-    def __init__(self, block, layers, channels, classes=1000, thumbnail=False, **kwargs):
+    def __init__(self, block, layers, channels, classes=1000, thumbnail=False, caption_length=50,**kwargs):
         super(ResNetV2, self).__init__(**kwargs)
         assert len(layers) == len(channels) - 1
         with self.name_scope():
@@ -283,6 +258,8 @@ class ResNetV2(gluon.HybridBlock):
             self.features.add(nn.Flatten())
 
             self.output = nn.Dense(classes, in_units=in_channels)
+            self.output_2 = nn.Dense(caption_length)
+            self.embedding = nn.Embedding(40000,caption_length,weight_initializer=mx.initializer.Uniform())
 
     def _make_layer(self, block, layers, channels, stride, stage_index, in_channels=0):
         layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
@@ -296,6 +273,8 @@ class ResNetV2(gluon.HybridBlock):
     def hybrid_forward(self, F, x):
         x = self.features(x)
         x = self.output(x)
+        x = self.output_2(x)
+        x = self.embedding(x)
         return x
 
 resnet_spec = {18: ('basic_block', [2, 2, 2, 2], [64, 64, 128, 256, 512]),
@@ -308,7 +287,7 @@ resnet_net_versions = [ResNetV1, ResNetV2]
 resnet_block_versions = [{'basic_block': BasicBlockV1, 'bottle_neck': BottleneckV1},
                          {'basic_block': BasicBlockV2, 'bottle_neck': BottleneckV2}]
 
-def get_resnet(version, num_layers, pretrained=False, ctx=mx.cpu(), **kwargs):
+def get_resnet(version, num_layers, pretrained=False, ctx=mx.cpu(), caption_length=50, **kwargs):
 
     assert num_layers in resnet_spec, \
         "Invalid number of layers: %d. Options are %s"%(
@@ -316,41 +295,34 @@ def get_resnet(version, num_layers, pretrained=False, ctx=mx.cpu(), **kwargs):
     block_type, layers, channels = resnet_spec[num_layers]
     assert version >= 1 and version <= 2, \
         "Invalid resnet version: %d. Options are 1 and 2."%version
+
     resnet_class = resnet_net_versions[version-1]
     block_class = resnet_block_versions[version-1][block_type]
-    net = resnet_class(block_class, layers, channels, **kwargs)
+    net = resnet_class(block_class, layers, channels, caption_length=caption_length,**kwargs)
     return net
 
-def resnet18_v2(**kwargs):
-    return get_resnet(2, 18, **kwargs)
+def resnet18_v2(caption_length=50,**kwargs):
+    return get_resnet(2, 18, caption_length=caption_length,**kwargs)
 
-def resnet34_v2(**kwargs):
-    return get_resnet(2, 34, **kwargs)
+def resnet34_v2(caption_length=50,**kwargs):
+    return get_resnet(2, 34, caption_length=50, **kwargs)
 
-def resnet50_v2(**kwargs):
-    return get_resnet(2, 50, **kwargs)
+def resnet50_v2(caption_length=50, **kwargs):
+    return get_resnet(2, 50, caption_length=50, **kwargs)
 
-def resnet101_v2(**kwargs):
-    return get_resnet(2, 101, **kwargs)
+def resnet101_v2(caption_length=50, **kwargs):
+    return get_resnet(2, 101, caption_length=50, **kwargs)
 
-def resnet152_v2(**kwargs):
-    return get_resnet(2, 152, **kwargs)
+def resnet152_v2(caption_length=50, **kwargs):
+    return get_resnet(2, 152, caption_length=50, **kwargs)
+
 
 if __name__ == '__main__':
-    #load_pretrain()
-    #test_net()
-    #ctx = mx.cpu()
-    #pred = nd.random.uniform(shape=(16, 50),ctx=ctx)
-    #label = nd.random.uniform(shape=(16, 50),ctx=ctx)
-    #result = pred + label
-    #print(pred[0].shape)
-    #result = F.dot(pred[0],pred[0])/F.norm(pred[0])/F.norm(pred[0])
-    #result = _cosine_similarity(pred,pred,ctx=ctx)
-    #print(result.shape)
-    net = resnet18_v2()
+    net = resnet18_v2(caption_length=40)
     ctx = mx.cpu()
     net.initialize(ctx=ctx)
     print(net.output)
     X = nd.random.uniform(shape=(233,40,3,224,224),ctx=ctx)
     output = net(X)
     print(output.shape)
+    #load_pretrain()

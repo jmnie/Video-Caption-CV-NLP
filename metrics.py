@@ -1,0 +1,57 @@
+from mxnet.gluon.loss import Loss
+import mxnet.ndarray as F 
+from mxnet import gluon, nd, ndarray
+
+def _apply_weighting(F, loss, weight=None, sample_weight=None):
+
+    if sample_weight is not None:
+        loss = F.broadcast_mul(loss, sample_weight)
+    if weight is not None:
+        assert isinstance(weight, numeric_types), "weight must be a number"
+        loss = loss * weight
+    return loss
+
+def _reshape_like(F, x, y):
+    return x.reshape(y.shape) if F is ndarray else F.reshape_like(x, y)
+
+
+class L2Loss(Loss):
+    def __init__(self, weight=1., batch_axis=0, **kwargs):
+        super(L2Loss, self).__init__(weight, batch_axis, **kwargs)
+
+    def hybrid_forward(self, F, pred, label, sample_weight=None):
+        label = _reshape_like(F, label, pred)
+        loss = F.square(pred - label)
+        loss = _apply_weighting(F, loss, self._weight/2, sample_weight)
+        return F.sqrt(F.mean(loss, axis=self._batch_axis, exclude=True))
+
+class L2Loss_2(Loss):
+
+    def __init__(self, axis=-1, sparse_label=True, from_logits=False, weight=None, batch_axis=1, **kwargs):
+        super(L2Loss_2, self).__init__(weight, batch_axis, **kwargs)
+        self._axis = axis
+        self._sparse_label = sparse_label
+        self._from_logits = from_logits
+        self.weight = weight
+
+    def hybrid_forward(self, F, pred, label, sample_weight=None):
+
+        loss = F.sum(F.sqrt(F.square(pred - label)), axis=self._batch_axis)
+        #return F.mean(loss, axis=self._batch_axis, exclude=True)
+        return loss
+
+class L2Loss_cos(Loss):
+    def __init__(self, weight=None, batch_axis=0, margin=0, eps=1e-12, **kwargs):
+        super(L2Loss_cos, self).__init__(weight, batch_axis, **kwargs)
+        self._margin = margin
+
+    
+    def hybrid_forward(self, F, pred, label,sample_weight=None):
+        loss = F.sqrt(F.square(F.flatten(pred)-F.flatten(label)))
+        loss = loss.reshape(loss.shape[0],pred.shape[1],pred.shape[2])
+        return F.mean(loss,axis=1)
+
+'''
+Add the metrics here:
+METEOR, CIDEr, BLEU, ROUGE_L
+'''

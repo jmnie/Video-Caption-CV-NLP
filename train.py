@@ -1,10 +1,12 @@
 import time 
 import mxnet as mx 
+from mxnet.gluon.model_zoo import vision
 from mxnet import gluon, autograd, nd
 from data_loader import videoFolder
 import utils
 from option import Options, args_
-from network import lstm_net, L2Loss_2, L2Loss_cos
+from network import lstm_net
+from metrics import L2Loss_2, L2Loss_cos
 
 def train(args):
     frames = args.frames
@@ -16,9 +18,14 @@ def train(args):
     else:
         ctx = mx.cpu()
     
+    if args.load_pretrain:
+        pretain_model = vision.vgg16_bn(pretrained=True,ctx=ctx)
+    else:
+        pretain_model = None
+    
     transform = utils.Compose([utils.ToTensor(ctx),
                                utils.normalize(ctx),
-                               ])
+                             ])
     
     target_transform = utils.targetCompose([utils.WordToTensor(ctx)])
 
@@ -30,9 +37,9 @@ def train(args):
 
     #test_loader = gluon.data.DataLoader(test_dataset,batch_size=args.batch_size,last_batch='keep',shuffle=False)
 
-    loss = L2Loss_cos()
-    #loss = L2Loss_2()
-    net = lstm_net(frames,caption_length)
+    #loss = L2Loss_cos()
+    loss = L2Loss_2()
+    net = lstm_net(frames,caption_length,ctx,pretained=pretain_model,pretain_model=pretain_model)
     
     net.initialize(init=mx.initializer.MSRAPrelu(), ctx=ctx)
     trainer = gluon.Trainer(net.collect_params(), 'adam',
