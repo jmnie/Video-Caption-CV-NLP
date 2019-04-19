@@ -3,6 +3,7 @@ import mxnet.gluon.data as data
 import json
 import os
 import numpy as np
+import mxnet as mx
 
 WIDTH = 224
 HEIGHT = 224
@@ -37,6 +38,8 @@ def word2embd(words,glove_model,caption_length,dimension):
     for i in range(caption_length):
         if i < len(words):
             embd[i] = glove_model[words[i]]
+            
+    embd = embd.astype('float32')  
     return embd
 
 def opencv_loader(path,frame_count,img_size=None):
@@ -58,11 +61,14 @@ def opencv_loader(path,frame_count,img_size=None):
             if img_size is not None:
                 frame = cv2.resize(frame, (img_size, img_size)) 
             frames.append(frame)
-    return np.array(frames)
+    frames = np.array(frames)
+    frames = frames.astype('float32')  
+    return frames
+    #return np.array(frames)
 
 
 class videoFolder(data.Dataset):
-    def __init__(self, rootdir, dict_file, frames, gloveFile, caption_length, img_size=240, transform=None,loader=opencv_loader, word2embd=word2embd):
+    def __init__(self, rootdir, dict_file, frames, gloveFile, caption_length, ctx, img_size=240, transform=None, target_transform=None, loader=opencv_loader, word2embd=word2embd):
 
         videos = make_dataset(rootdir,dict_file)
 
@@ -77,12 +83,14 @@ class videoFolder(data.Dataset):
         self.rootdir = rootdir
         self.dict_file = dict_file
         self.transform = transform
+        self.target_transform = target_transform
         self.img_size = img_size
         self.frames = frames
         glove_model,dimension = load_glove_model(gloveFile)
         self.glove_model = glove_model
         self.dimension = dimension
         self.caption_length = caption_length
+        self.ctx = ctx
        
         #return super().__init__(*args, **kwargs)
 
@@ -95,13 +103,21 @@ class videoFolder(data.Dataset):
         """
         path, caption = self.videos[idx]
         video_frame = self.loader(path,self.frames,self.img_size)
+        #video_frame = mx.nd.array(video_frame)
+        #video_frame = video_frame.as_in_context(self.ctx)
+        
         embd = self.word2embd(caption,self.glove_model,self.caption_length,self.dimension)
-
+        #embd = mx.nd.array(embd)
+        #embd = embd.as_in_context(self.ctx)
+        
         """
         Preprocess the frame
         """
         if self.transform is not None:
             video_frame = self.transform(video_frame)
+            
+        if self.target_transform is not None:
+            embd = self.target_transform(embd)
         
         return video_frame,embd
     

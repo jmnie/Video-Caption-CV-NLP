@@ -90,9 +90,10 @@ class ToTensor(object):
         self.ctx = ctx
 
     def __call__(self, img):
-        img = mx.nd.array(np.array(img).transpose(0, 3, 1, 2).astype('float32'), ctx=self.ctx)
+        img = mx.nd.array(img.transpose(0, 3, 1, 2).astype('float32'), ctx=self.ctx)
         return img
 
+    
 """
 OpenCV load video as BGR
 """
@@ -108,7 +109,25 @@ class normalize(object):
             img[_] = subtract_imagenet_mean_batch(img[_])
         return img 
         
+class targetCompose(object):
+    
+    def __init__(self, transforms):
+        self.transforms = transforms
 
+    def __call__(self, embd):
+        for t in self.transforms:
+            embd = t(embd)
+            
+        return embd
+    
+class WordToTensor(object):
+    def __init__(self, ctx):
+        self.ctx = ctx
+
+    def __call__(self, embd):
+        embd = mx.nd.array(embd.astype('float32'), ctx=self.ctx)
+        return embd
+    
 class Compose(object):
     """Composes several transforms together.
     Args:
