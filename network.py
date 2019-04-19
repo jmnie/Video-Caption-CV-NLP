@@ -40,12 +40,12 @@ def test_net():
 
 
 class lstm_net(gluon.Block):
-    def __init__(self,frames,caption_length,ctx,predtrain_model=None):
+    def __init__(self,frames,caption_length,ctx,pretrained=False):
         super(lstm_net,self).__init__()
 
         self.frames = frames
         self.caption_length = caption_length
-        self.pretrain_model = pretrain_model
+        self.pretrained = pretrained
         self.ctx = ctx
         
         self.lstm_1 = rnn.LSTM(hidden_size=200,num_layers=2,layout='NTC',bidirectional=False)
@@ -54,16 +54,11 @@ class lstm_net(gluon.Block):
         self.dense = nn.Dense(self.caption_length,flatten=False)
 
     def forward(self, x):
-        if self.pretrain_model is not None:
-            new_net = self.pretrain_model[:-1]
-            input_ = mx.nd.zeros(shape=(x.shape[0],x.shape[1],4096),ctx=self.ctx)
-
-            for i in range(x.shape[0]):
-                input_[i] = new_net(x[i])
-
-        else:
+        if not self.pretrained:
             input_ = x.reshape(x.shape[0],x.shape[1],x.shape[2]*x.shape[3]*x.shape[4])
-
+        else:
+            input_ = x
+            
         output_1 = self.lstm_1(input_)
         output_2 = self.lstm_2(output_1)
         dense_1 = self.dense(output_2)

@@ -93,6 +93,15 @@ class ToTensor(object):
         img = mx.nd.array(img.transpose(0, 3, 1, 2).astype('float32'), ctx=self.ctx)
         return img
 
+class extractFeature(object):
+    def __init__(self, ctx, pretrain_model):
+        self.ctx = ctx
+        self.pretrain_model = pretrain_model
+
+    def __call__(self, img):
+        new_net = self.pretrain_model.features[:-1]
+        input_ = new_net(img)       
+        return input_
     
 """
 OpenCV load video as BGR

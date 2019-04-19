@@ -19,27 +19,32 @@ def train(args):
         ctx = mx.cpu()
     
     if args.load_pretrain:
-        pretain_model = vision.vgg16_bn(pretrained=True,ctx=ctx)
-    else:
-        pretain_model = None
-    
-    transform = utils.Compose([utils.ToTensor(ctx),
+        pretrain_model = vision.vgg16_bn(pretrained=True,ctx=ctx)
+        transform = utils.Compose([utils.ToTensor(ctx),
                                utils.normalize(ctx),
+                               utils.extractFeature(ctx,pretrain_model)
                              ])
+    else:
+        pretrain_model = None
+        transform = utils.Compose([utils.ToTensor(ctx),
+                                   utils.normalize(ctx),
+                                 ])
     
     target_transform = utils.targetCompose([utils.WordToTensor(ctx)])
 
-    train_dataset = videoFolder(args.train_folder,args.train_dict, frames, glove_file, caption_length, ctx, transform=transform, target_transform=target_transform)
+    train_dataset = videoFolder(args.train_folder,args.train_dict, frames, glove_file, 
+                    caption_length, ctx, transform=transform, target_transform=target_transform)
 
     #test_dataset = videoFolder(args.test_folder,args.test_dict, frames, glove_file, caption_length, transform=transform)
 
-    train_loader = gluon.data.DataLoader(train_dataset,batch_size=args.batch_size,last_batch='keep',shuffle=True)
+    train_loader = gluon.data.DataLoader(train_dataset,batch_size=args.batch_size,
+                                         last_batch='keep',shuffle=True)
 
     #test_loader = gluon.data.DataLoader(test_dataset,batch_size=args.batch_size,last_batch='keep',shuffle=False)
 
     #loss = L2Loss_cos()
     loss = L2Loss_2()
-    net = lstm_net(frames,caption_length,ctx,pretained=pretain_model,pretain_model=pretain_model)
+    net = lstm_net(frames,caption_length,ctx,pretrained=args.load_pretrain)
     
     net.initialize(init=mx.initializer.MSRAPrelu(), ctx=ctx)
     trainer = gluon.Trainer(net.collect_params(), 'adam',
@@ -49,10 +54,11 @@ def train(args):
     
     for e in range(args.epochs):
         for batch_id, (x,_) in enumerate(train_loader):
+            #print(x.shape)
             with autograd.record():
                pred = net(x)
                batch_loss = loss(pred,_)
-               batch_loss.backward(retain_graph=True)
+               batch_loss.backward()
 
             #print(train_loss.shape)
             trainer.step(args.batch_size)
@@ -62,7 +68,6 @@ def train(args):
                           else epoch_loss + batch_loss)
         
         print("Epoch {}, train_loss:{}".format(e+1, train_loss.shape))
-
 
 def main():
     args = args_()
