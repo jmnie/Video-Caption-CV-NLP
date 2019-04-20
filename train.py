@@ -6,7 +6,7 @@ from data_loader import videoFolder
 import utils
 from option import Options, args_
 from network import lstm_net
-from metrics import L2Loss_2, L2Loss_cos
+from metrics import L2Loss_2, L2Loss_cos, cal_bleu_batch, cal_meteor_batch
 
 def train(args):
     frames = args.frames
@@ -67,7 +67,7 @@ def train(args):
             epoch_loss = (batch_loss if ((batch_id == 0) and (e == 0))
                           else epoch_loss + batch_loss)
         
-        print("Epoch {}, train_loss:{}".format(e+1, train_loss.shape))
+        print("Epoch {}, train_loss:{}".format(e+1, epoch_loss.shape))
 
 def main():
     args = args_()

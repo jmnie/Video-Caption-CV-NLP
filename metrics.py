@@ -55,3 +55,38 @@ class L2Loss_cos(Loss):
 Add the metrics here:
 METEOR, CIDEr, BLEU, ROUGE_L
 '''
+import nltk
+import nltk.translate.bleu_score as bleu
+import nltk.translate.meteor_score as meteor
+
+def get_bleu(label,pred):
+    score = bleu.sentence_bleu([label], pred)
+    return score
+
+def get_meteor(label,pred):
+    label = ' '.join(word for word in label)
+    pred = ' '.join(word for word in pred)
+    score = meteor.single_meteor_score(label,pred)
+    return score
+
+def cal_bleu_batch(label_batch,pred_batch):
+    score = 0
+    for i in range(len(label_batch)):
+        score += get_bleu(label_batch[i],pred_batch[i])
+    
+    return float(score/len(label_batch)) 
+
+def cal_meteor_batch(label_batch,pred_batch):
+    score = 0
+    for i in range(len(label_batch)):
+        score += get_bleu(label_batch[i],pred_batch[i])
+    
+    return float(score/len(label_batch)) 
+    
+if __name__ == '__main__':
+    hyp = str('she read the book because she was interested in world history').split()
+    ref_a = str('she read the book because she was interested in world history').split()
+    ref_b = str('she was interested in world history because she read the book').split()
+    #print(ref_a,ref_b)
+    #get_bleu(ref_b,hyp)
+    print(get_meteor(ref_b,hyp))

@@ -297,15 +297,15 @@ def filter_sentence_2(words,glove_model):
 
 def process_data(trainval_path='/HDD/dl_proj/msr_vtt/train_val_videodatainfo.json',test_path='/HDD/dl_proj/msr_vtt/test_videodatainfo.json'):
     
-    gloveFile='/HDD/dl_proj/glove/glove.6B.50d.txt'
-    print("Loading Glove Model")
-    f = open(gloveFile,'r')
-    glove_words = set()
+    # gloveFile='/HDD/dl_proj/glove/glove.6B.50d.txt'
+    # print("Loading Glove Model")
+    # f = open(gloveFile,'r')
+    # glove_words = set()
 
-    for line in f:
-        splitLine = line.split()
-        word_ = splitLine[0]
-        glove_words.add(word_)
+    # for line in f:
+    #     splitLine = line.split()
+    #     word_ = splitLine[0]
+    #     glove_words.add(word_)
 
     with open(trainval_path) as file:
         trainval_att = json.load(file)
@@ -347,35 +347,35 @@ def process_data(trainval_path='/HDD/dl_proj/msr_vtt/train_val_videodatainfo.jso
         line = filter_sentence(line)
         test_dict[item['video_id']]['caption'].append(line)
 
-    for video in train_dict:
-        index = np.argmax([len(s) for s in train_dict[video]['caption']])
-        words = train_dict[video]['caption'][index]
-        words = filter_sentence_2(words,glove_words)
-        train_dict[video]['caption'] = words
+    # for video in train_dict:
+    #     index = np.argmax([len(s) for s in train_dict[video]['caption']])
+    #     words = train_dict[video]['caption'][index]
+    #     words = filter_sentence_2(words,glove_words)
+    #     train_dict[video]['caption'] = words
     
-    for video in val_dict:
-        index = np.argmax([len(s) for s in val_dict[video]['caption']])
-        words = val_dict[video]['caption'][index]
-        words = filter_sentence_2(words,glove_words)
-        val_dict[video]['caption'] = words
+    # for video in val_dict:
+    #     index = np.argmax([len(s) for s in val_dict[video]['caption']])
+    #     words = val_dict[video]['caption'][index]
+    #     words = filter_sentence_2(words,glove_words)
+    #     val_dict[video]['caption'] = words
     
-    for video in test_dict:
-        index = np.argmax([len(s) for s in test_dict[video]['caption']])
-        words = test_dict[video]['caption'][index]
-        words = filter_sentence_2(words,glove_words)
-        test_dict[video]['caption'] = words
+    # for video in test_dict:
+    #     index = np.argmax([len(s) for s in test_dict[video]['caption']])
+    #     words = test_dict[video]['caption'][index]
+    #     words = filter_sentence_2(words,glove_words)
+    #     test_dict[video]['caption'] = words
 
     
     """
     Save these dictionaries
     """
-    with open('./annotation/train_50d.json','w') as fp:
+    with open('./annotation/train.json','w') as fp:
         json.dump(train_dict,fp)
     
-    with open('./annotation/val_50d.json','w') as fp:
+    with open('./annotation/val.json','w') as fp:
         json.dump(val_dict,fp)
     
-    with open('./annotation/test_50d.json','w') as fp:
+    with open('./annotation/test.json','w') as fp:
         json.dump(test_dict,fp)
 
 
@@ -473,8 +473,8 @@ def simple_fuzzy_checking(word,glove_model):
 def main():
     print("--")
     #read_json()
-    #process_data()
-    new_annotation()
+    process_data(trainval_path='/home/jiaming/Downloads/dataset/msr-vtt/train_val_annotation/train_val_videodatainfo.json',test_path='/home/jiaming/Downloads/dataset/msr-vtt/test_videodatainfo.json')
+    #new_annotation()
     # path = '/HDD/dl_proj/glove/glove.6B.50d.txt'
     # glove_model = loadGloveModel_2(path)
     # word = 'redblue'
