@@ -48,8 +48,8 @@ class lstm_net(gluon.Block):
         self.pretrained = pretrained
         self.ctx = ctx
         
-        self.lstm_1 = rnn.LSTM(hidden_size=100,num_layers=1,layout='TNC',bidirectional=False)
-        self.lstm_2 = rnn.LSTM(hidden_size=100,num_layers=1,layout='TNC',bidirectional=False)
+        self.lstm_1 = rnn.LSTM(hidden_size=100,num_layers=1,layout='NTC',bidirectional=False)
+        self.lstm_2 = rnn.LSTM(hidden_size=100,num_layers=1,layout='NTC',bidirectional=False)
         self.dense = nn.Dense(self.caption_length,flatten=False)
 
     def forward(self, x):

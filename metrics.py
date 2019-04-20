@@ -27,7 +27,7 @@ class L2Loss(Loss):
 
 class L2Loss_2(Loss):
 
-    def __init__(self, axis=-1, sparse_label=True, from_logits=False, weight=None, batch_axis=1, **kwargs):
+    def __init__(self, axis=-1, sparse_label=True, from_logits=False, weight=None, batch_axis=2, **kwargs):
         super(L2Loss_2, self).__init__(weight, batch_axis, **kwargs)
         self._axis = axis
         self._sparse_label = sparse_label
@@ -36,7 +36,7 @@ class L2Loss_2(Loss):
 
     def hybrid_forward(self, F, pred, label, sample_weight=None):
 
-        loss = F.sum(F.sqrt(F.square(pred - label)), axis=self._batch_axis)
+        loss = F.mean(F.sqrt(F.square(pred - label)), axis=self._batch_axis)
         #return F.mean(loss, axis=self._batch_axis, exclude=True)
         return loss
 

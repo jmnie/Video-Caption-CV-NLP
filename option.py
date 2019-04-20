@@ -37,9 +37,9 @@ class args_(object):
         self.caption_length = 50
         self.cuda = 1
         self.batch_size = 16
-        self.lr = 1e-5
+        self.lr = 1e-4
         self.epochs = 20
-        self.load_pretrain = 0
+        self.load_pretrain = 1
         self.save_model = True
 
 # test = Options().parse()
