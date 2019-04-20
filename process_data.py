@@ -395,6 +395,7 @@ def new_annotation():
     with open('./annotation/val_50d.json','r') as fp:
         val_ = json.load(fp)
     
+    print("Train length :",len(train_.keys()),"Test length :",len(test_.keys()), "Val length :",len(val_.keys()))
     length = dict()
     words = set()
     captions = []
@@ -473,8 +474,8 @@ def simple_fuzzy_checking(word,glove_model):
 def main():
     print("--")
     #read_json()
-    process_data(trainval_path='/home/jiaming/Downloads/dataset/msr-vtt/train_val_annotation/train_val_videodatainfo.json',test_path='/home/jiaming/Downloads/dataset/msr-vtt/test_videodatainfo.json')
-    #new_annotation()
+    #process_data(trainval_path='/home/jiaming/Downloads/dataset/msr-vtt/train_val_annotation/train_val_videodatainfo.json',test_path='/home/jiaming/Downloads/dataset/msr-vtt/test_videodatainfo.json')
+    new_annotation()
     # path = '/HDD/dl_proj/glove/glove.6B.50d.txt'
     # glove_model = loadGloveModel_2(path)
     # word = 'redblue'

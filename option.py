@@ -37,10 +37,10 @@ class args_(object):
         self.caption_length = 50
         self.cuda = 1
         self.batch_size = 16
-        self.lr = 1e-3
-        self.epochs = 30
-        self.load_pretrain = 1
-        
+        self.lr = 1e-5
+        self.epochs = 20
+        self.load_pretrain = 0
+        self.save_model = True
 
 # test = Options().parse()
 # # print(test.add_argument('--batch_size',32))

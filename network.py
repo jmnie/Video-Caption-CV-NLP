@@ -48,9 +48,8 @@ class lstm_net(gluon.Block):
         self.pretrained = pretrained
         self.ctx = ctx
         
-        self.lstm_1 = rnn.LSTM(hidden_size=200,num_layers=2,layout='NTC',bidirectional=False)
-        self.lstm_2 = rnn.LSTM(hidden_size=100,num_layers=2,layout='NTC',
-        bidirectional=False)
+        self.lstm_1 = rnn.LSTM(hidden_size=100,num_layers=1,layout='TNC',bidirectional=False)
+        self.lstm_2 = rnn.LSTM(hidden_size=100,num_layers=1,layout='TNC',bidirectional=False)
         self.dense = nn.Dense(self.caption_length,flatten=False)
 
     def forward(self, x):
@@ -206,10 +205,12 @@ class ResNetV1(gluon.HybridBlock):
                 stride = 1 if i == 0 else 2
                 self.features.add(self._make_layer(block, num_layer, channels[i+1],stride, i+1, in_channels=channels[i]))
             self.features.add(nn.GlobalAvgPool3D())
+            self.features.add(nn.Dense(classes, in_units=in_channels))
+            self.features.add(nn.Dense(caption_length))
+#             self.output = nn.Dense(classes, in_units=in_channels)
+#             self.output_2 = nn.Dense(caption_length)
+            self.output = nn.Embedding(40000,caption_length)
 
-            self.output = nn.Dense(classes, in_units=channels[-1])
-            self.output_2 = nn.Dense(caption_length)
-            self.embedding = nn.Embedding(40000,caption_length, weight_initializer=mx.initializer.Uniform())
 
     def _make_layer(self, block, layers, channels, stride, stage_index, in_channels=0):
         layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
@@ -223,8 +224,6 @@ class ResNetV1(gluon.HybridBlock):
     def hybrid_forward(self, F, x):
         x = self.features(x)
         x = self.output(x)
-        x = self.output_2(x)
-        x = self.embedding(x)
         return x
 
 class ResNetV2(gluon.HybridBlock):
@@ -251,10 +250,11 @@ class ResNetV2(gluon.HybridBlock):
             self.features.add(nn.Activation('relu'))
             self.features.add(nn.GlobalAvgPool3D())
             self.features.add(nn.Flatten())
-
-            self.output = nn.Dense(classes, in_units=in_channels)
-            self.output_2 = nn.Dense(caption_length)
-            self.embedding = nn.Embedding(40000,caption_length,weight_initializer=mx.initializer.Uniform())
+            self.features.add(nn.Dense(classes, in_units=in_channels))
+            self.features.add(nn.Dense(caption_length))
+#             self.output = nn.Dense(classes, in_units=in_channels)
+#             self.output_2 = nn.Dense(caption_length)
+            self.output = nn.Embedding(40000,caption_length)
 
     def _make_layer(self, block, layers, channels, stride, stage_index, in_channels=0):
         layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
@@ -267,9 +267,9 @@ class ResNetV2(gluon.HybridBlock):
 
     def hybrid_forward(self, F, x):
         x = self.features(x)
+#         x = self.output(x)
+#         x = self.output_2(x)
         x = self.output(x)
-        x = self.output_2(x)
-        x = self.embedding(x)
         return x
 
 resnet_spec = {18: ('basic_block', [2, 2, 2, 2], [64, 64, 128, 256, 512]),
@@ -296,8 +296,8 @@ def get_resnet(version, num_layers, pretrained=False, ctx=mx.cpu(), caption_leng
     net = resnet_class(block_class, layers, channels, caption_length=caption_length,**kwargs)
     return net
 
-def resnet18_v2(caption_length=50,**kwargs):
-    return get_resnet(2, 18, caption_length=caption_length,**kwargs)
+def resnet18_v2(caption_length=50,ctx=mx.cpu(),**kwargs):
+    return get_resnet(2, 18, caption_length=caption_length, ctx=ctx,**kwargs)
 
 def resnet34_v2(caption_length=50,**kwargs):
     return get_resnet(2, 34, caption_length=50, **kwargs)
@@ -313,11 +313,12 @@ def resnet152_v2(caption_length=50, **kwargs):
 
 
 if __name__ == '__main__':
-    net = resnet18_v2(caption_length=40)
     ctx = mx.cpu()
+    net = lstm_net(50,50,ctx=ctx)
+    #net = resnet18_v2(50)
     net.initialize(ctx=ctx)
-    print(net.output)
-    X = nd.random.uniform(shape=(233,40,3,224,224),ctx=ctx)
+    #print(net.output)
+    X = nd.random.uniform(shape=(233,50,3,224,224),ctx=ctx)
     output = net(X)
     print(output.shape)
     #load_pretrain()

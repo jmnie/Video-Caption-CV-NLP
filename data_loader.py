@@ -118,7 +118,7 @@ class videoFolder(data.Dataset):
             
         if self.target_transform is not None:
             embd = self.target_transform(embd)
-        
+                
         return video_frame,embd
     
     def __len__(self):

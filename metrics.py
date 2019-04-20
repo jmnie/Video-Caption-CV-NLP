@@ -82,6 +82,50 @@ def cal_meteor_batch(label_batch,pred_batch):
         score += get_bleu(label_batch[i],pred_batch[i])
     
     return float(score/len(label_batch)) 
+
+def embed_to_word(embd,model):
+    bestWord = None
+    distance = float('inf')
+    for word in model.keys():
+        e=model[word]
+        d = 0
+        for a,b in zip(e,embd):
+            d+=(a-b)*(a-b)
+        if d<distance:
+            distance=d
+            bestWord = word
+
+    assert(bestWord is not None)
+    return (bestWord, distance)
+
+def embed_to_sentence(embd,model):
+    setence=[]
+    for i in range(len(embd)):
+        word = embed_to_word(embd[i],model)[0]
+        sentence.append(word)
+    return sentence
+        
+def load_glove_model(gloveFile):
+    f = open(gloveFile,'r')
+    model = {}
+    for line in f:
+        splitLine = line.split()
+        word = splitLine[0]
+        embedding = np.array([float(val) for val in splitLine[1:]])
+        model[word] = embedding
+    #print("Done.",len(model)," words loaded!")
+    return model
+    
+
+def embed_to_sen_batch(batch_vector,gloveModel):
+    batch_vector = batch_vector.asnumpy()
+    senten_batch = []
+    
+    for i in range(batch_vector.shape[0]):
+        temp = embed_to_sentence(batch_vetcor[i],gloveModel)
+        senten_batch.append(temp)
+        
+    return senten_batch
     
 if __name__ == '__main__':
     hyp = str('she read the book because she was interested in world history').split()
