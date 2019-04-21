@@ -30,17 +30,20 @@ class args_(object):
     def __init__(self):
         self.train_folder = '/HDD/dl_proj/msr_vtt/TrainValVideo'
         self.test_folder = '/HDD/dl_proj/msr_vtt/TestVideo'
+        self.val_folder = '/HDD/dl_proj/msr_vtt/TrainValVideo'
         self.glove_file = '/HDD/dl_proj/glove/glove.6B.50d.txt'
         self.train_dict = './annotation/train_50d.json'
         self.test_dict = './annotation/test_50d.json'
+        self.val_dict = './annotation/val_50d.json'
         self.frames = 50
         self.caption_length = 50
         self.cuda = 1
         self.batch_size = 16
-        self.lr = 1e-4
+        self.lr = 1e-5
         self.epochs = 20
-        self.load_pretrain = 1
+        self.load_pretrain = 0
         self.save_model = True
+        self.model_path = './save_model/'
 
 # test = Options().parse()
 # # print(test.add_argument('--batch_size',32))

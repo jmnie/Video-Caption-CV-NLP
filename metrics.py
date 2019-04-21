@@ -1,6 +1,7 @@
 from mxnet.gluon.loss import Loss
 import mxnet.ndarray as F 
 from mxnet import gluon, nd, ndarray
+import mxnet as mx
 
 def _apply_weighting(F, loss, weight=None, sample_weight=None):
 
@@ -132,5 +133,9 @@ if __name__ == '__main__':
     ref_a = str('she read the book because she was interested in world history').split()
     ref_b = str('she was interested in world history because she read the book').split()
     #print(ref_a,ref_b)
-    #get_bleu(ref_b,hyp)
-    print(get_meteor(ref_b,hyp))
+    ctx = mx.cpu()
+    x = nd.random.uniform(shape=(16,50),ctx=ctx)
+    mean = F.mean(x).asscalar()
+    print(mean)
+    
+    #print(get_meteor(ref_b,hyp))

@@ -72,7 +72,9 @@ def train(args):
             mx.nd.waitall()
             
             batch_loss = F.mean(batch_loss).asscalar()
-            #print("Iteration {}, batch_loss:{}".format(batch_id+1, batch_loss))
+            
+            if batch_id % 100 == 0:
+                print("Train Batch:{}, batch_loss:{}".format(batch_id+1, batch_loss))
                   
             epoch_loss = (batch_loss if ((batch_id == 0) and (e == 0))
                           else (1 - smoothing_constant)*epoch_loss + smoothing_constant*batch_loss)
@@ -84,6 +86,10 @@ def train(args):
                 batch_loss_1 = loss(pred,_)
             
             batch_loss_1 = F.mean(batch_loss_1).asscalar()
+            
+            if batch_id % 100 == 0:
+                print("Test Batch:{}, batch_loss:{}".format(batch_id+1, batch_loss_1))
+                
             epoch_loss_1 = (batch_loss_1 if ((batch_id == 0) and (e == 0))
                           else (1 - smoothing_constant)*epoch_loss_1 + smoothing_constant*batch_loss_1)
             
@@ -95,7 +101,35 @@ def train(args):
         file_name = "./saved_model/" + "lstm_pretrain.params"
         net.save_parameters(file_name)
 
-#def evaluate_val():
+def eval(args):
+    frames = args.frames
+    caption_length = args.caption_length
+    glove_file = args.glove_file
+
+    if args.cuda:
+        ctx = mx.gpu()
+    else:
+        ctx = mx.cpu()
+    
+    if args.load_pretrain:
+        pretrain_model = vision.vgg16_bn(pretrained=True,ctx=ctx)
+        transform = utils.Compose([utils.ToTensor(ctx),
+                               utils.normalize(ctx),
+                               utils.extractFeature(ctx,pretrain_model)
+                             ])
+    else:
+        pretrain_model = None
+        transform = utils.Compose([utils.ToTensor(ctx),
+                                   utils.normalize(ctx),
+                                 ])
+    
+    target_transform = utils.targetCompose([utils.WordToTensor(ctx)])
+
+    val_dataset = videoFolder(args.val_folder,args.val_dict, frames, glove_file, caption_length, ctx, transform=transform, target_transform=target_transform)
+
+    val_loader = gluon.data.DataLoader(val_dataset, batch_size=args.batch_size,last_batch='discard',shuffle=True)
+
+    
     
 def main():
     args = args_()

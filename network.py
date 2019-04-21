@@ -192,6 +192,7 @@ class ResNetV1(gluon.HybridBlock):
         super(ResNetV1, self).__init__(**kwargs)
         assert len(layers) == len(channels) - 1
         with self.name_scope():
+            self.caption_length=caption_length
             self.features = nn.HybridSequential(prefix='')
             if thumbnail:
                 self.features.add(_conv3x3(channels[0], 1, 0))
@@ -205,11 +206,8 @@ class ResNetV1(gluon.HybridBlock):
                 stride = 1 if i == 0 else 2
                 self.features.add(self._make_layer(block, num_layer, channels[i+1],stride, i+1, in_channels=channels[i]))
             self.features.add(nn.GlobalAvgPool3D())
-            self.features.add(nn.Dense(classes, in_units=in_channels))
-            self.features.add(nn.Dense(caption_length))
-#             self.output = nn.Dense(classes, in_units=in_channels)
-#             self.output_2 = nn.Dense(caption_length)
-            self.output = nn.Embedding(40000,caption_length)
+            #self.features.add(nn.Dense(classes, in_units=in_channels))
+            self.features.add(nn.Dense(caption_length*caption_length,in_units=in_channels))
 
 
     def _make_layer(self, block, layers, channels, stride, stage_index, in_channels=0):
@@ -223,7 +221,7 @@ class ResNetV1(gluon.HybridBlock):
 
     def hybrid_forward(self, F, x):
         x = self.features(x)
-        x = self.output(x)
+        #x = self.output(x)
         return x
 
 class ResNetV2(gluon.HybridBlock):
@@ -231,6 +229,7 @@ class ResNetV2(gluon.HybridBlock):
         super(ResNetV2, self).__init__(**kwargs)
         assert len(layers) == len(channels) - 1
         with self.name_scope():
+            self.caption_length=caption_length
             self.features = nn.HybridSequential(prefix='')
             self.features.add(nn.BatchNorm(scale=False, center=False))
             if thumbnail:
@@ -250,11 +249,9 @@ class ResNetV2(gluon.HybridBlock):
             self.features.add(nn.Activation('relu'))
             self.features.add(nn.GlobalAvgPool3D())
             self.features.add(nn.Flatten())
-            self.features.add(nn.Dense(classes, in_units=in_channels))
-            self.features.add(nn.Dense(caption_length))
-#             self.output = nn.Dense(classes, in_units=in_channels)
-#             self.output_2 = nn.Dense(caption_length)
-            self.output = nn.Embedding(40000,caption_length)
+            #self.features.add(nn.Dense(classes, in_units=in_channels))
+            self.features.add(nn.Dense(caption_length*caption_length,in_units=in_channels))
+            
 
     def _make_layer(self, block, layers, channels, stride, stage_index, in_channels=0):
         layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
@@ -267,9 +264,8 @@ class ResNetV2(gluon.HybridBlock):
 
     def hybrid_forward(self, F, x):
         x = self.features(x)
-#         x = self.output(x)
-#         x = self.output_2(x)
-        x = self.output(x)
+        #x = self.output(x)
+        x = F.reshape(x,(x.shape[0],self.caption_length,self.caption_length))
         return x
 
 resnet_spec = {18: ('basic_block', [2, 2, 2, 2], [64, 64, 128, 256, 512]),
@@ -314,11 +310,12 @@ def resnet152_v2(caption_length=50, **kwargs):
 
 if __name__ == '__main__':
     ctx = mx.cpu()
-    net = lstm_net(50,50,ctx=ctx)
-    #net = resnet18_v2(50)
+    #net = lstm_net(50,50,ctx=ctx)
+    net = resnet18_v2(50)
     net.initialize(ctx=ctx)
     #print(net.output)
     X = nd.random.uniform(shape=(233,50,3,224,224),ctx=ctx)
     output = net(X)
     print(output.shape)
+
     #load_pretrain()
