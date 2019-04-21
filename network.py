@@ -50,7 +50,7 @@ class lstm_net(gluon.Block):
         
         self.lstm_1 = rnn.LSTM(hidden_size=100,num_layers=1,layout='NTC',bidirectional=False)
         self.lstm_2 = rnn.LSTM(hidden_size=100,num_layers=1,layout='NTC',bidirectional=False)
-        self.dense = nn.Dense(self.caption_length,flatten=False)
+        self.dense = nn.Dense(self.caption_length*self.caption_length,flatten=True)
 
     def forward(self, x):
         if not self.pretrained:
@@ -61,7 +61,8 @@ class lstm_net(gluon.Block):
         output_1 = self.lstm_1(input_)
         output_2 = self.lstm_2(output_1)
         dense_1 = self.dense(output_2)
-        return dense_1
+        output = F.reshape(dense_1,(dense_1.shape[0],self.caption_length,self.caption_length))
+        return output
 
 
 """Change directly from the ResNet code"""
@@ -310,8 +311,8 @@ def resnet152_v2(caption_length=50, **kwargs):
 
 if __name__ == '__main__':
     ctx = mx.cpu()
-    #net = lstm_net(50,50,ctx=ctx)
-    net = resnet18_v2(50)
+    net = lstm_net(40,50,ctx=ctx)
+    #net = resnet18_v2(50)
     net.initialize(ctx=ctx)
     #print(net.output)
     X = nd.random.uniform(shape=(233,50,3,224,224),ctx=ctx)
