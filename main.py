@@ -245,8 +245,11 @@ def main():
 #     args.set_glove_file(
 #         '/home/jiaming/Downloads/dataset/glove.6B/glove.6B.50d.txt'
 #     )
-    train(args)
-    #evaluation(args)
+    
+    if args.mode == 1:
+        train(args)
+    else:
+        evaluation(args)
 
 
 # In[4]:
