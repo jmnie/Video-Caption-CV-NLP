@@ -3,3 +3,4 @@
 /.ipynb_checkpoints
 /saved_model
 /logs
+make_demo.py
