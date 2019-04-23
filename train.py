@@ -180,29 +180,58 @@ def evaluation(args):
     net = lstm_net(args.frames,caption_length,ctx)
     net.load_parameters(train_model,ctx=ctx)
     
-    print(net)
+    #print(net)
 
     with open(args.val_dict,'r') as fp:
         val_dataset = json.load(fp)
     
-    sample_key = list(val_dataset.keys())[23]
-    sample_video_file = sample_key + '.mp4'
-    sample_video_path = os.path.join(args.val_folder,sample_video_file)
+    result = []
+    for video in val_dataset:
+        video_file = video + '.mp4'
+        video_path = os.path.join(args.val_folder,video_file)
+        video_frame = opencv_loader(video_path,args.frames,img_size=240)
+        video_frame = frames_to_tensor(video_frame,ctx)
+        output = net(video_frame)
+        output = F.transpose(output).asnumpy()
 
-    frames_ = opencv_loader(sample_video_path,args.frames,img_size=240)
+        label = val_dataset[video]['caption']
+        pred = embd2word(output,glove_model,len(label))
+
+        label = ' '.join(word for word in label)
+        pred = ' '.join(word for word in pred)
+
+        print("Video :" + str(video) + '/t' + ' ' + label)
+        print("Pred: " + pred)
+
+        temp = []
+        temp.append(video)
+        temp.append(label)
+        temp.append(pred)
+        result.append(temp)
+
+    with open('val_result.txt', 'w') as f:
+        for item in result:
+            f.write("%s\n" % item)
+
+
+    # sample_key = list(val_dataset.keys())[23]
+    # sample_video_file = sample_key + '.mp4'
+    # sample_video_path = os.path.join(args.val_folder,sample_video_file)
+
+    # frames_ = opencv_loader(sample_video_path,args.frames,img_size=240)
     
-    frames_ = frames_to_tensor(frames_,ctx)
-    print(frames_.shape)
-    output = net(frames_)
-    output = F.transpose(output).asnumpy()
-    print(output.shape)
+    # frames_ = frames_to_tensor(frames_,ctx)
+    # print(frames_.shape)
+    # output = net(frames_)
+    # output = F.transpose(output).asnumpy()
+    # print(output.shape)
 
-    label = val_dataset[sample_key]['caption']
-    pred = embd2word(output,glove_model,len(label))
+    # label = val_dataset[sample_key]['caption']
+    # pred = embd2word(output,glove_model,len(label))
 
-    print("Validation Video: ",sample_key)
-    print("Pred :",pred)
-    print("Label :",label)
+    # print("Validation Video: ",sample_key)
+    # print("Pred :",pred)
+    # print("Label :",label)
 
 
 
