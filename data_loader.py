@@ -58,7 +58,7 @@ def embed_to_word(embd,model):
     bestWord = None
     distance = float('inf')
     for word in model.keys():
-        e=model[word]
+        e = model[word]
         d = 0
         for a,b in zip(e,embd):
             d+=(a-b)*(a-b)

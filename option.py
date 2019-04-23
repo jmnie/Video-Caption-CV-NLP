@@ -38,7 +38,7 @@ class args_(object):
         self.img_size = 240
         self.frames = 30
         self.caption_length = 50
-        self.cuda = 1
+        self.cuda = 0
         self.batch_size = 8
         self.lr = 1e-5
         self.epochs = 5
@@ -47,7 +47,7 @@ class args_(object):
         self.model_path = './saved_model'
         self.log_path = './logs'
         self.log_interval = 2000
-        self.model_file = './saved_model/Epoch_9_iters_800_Tue_Apr_23_15:10:23_2019_.params'
+        self.model_file = './saved_model/test.params'
         self.mode = 2
 
     def set_data_path(self,train_folder,test_folder,val_folder):

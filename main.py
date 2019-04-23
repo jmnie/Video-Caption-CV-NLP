@@ -237,14 +237,14 @@ def evaluation(args):
 
 def main():
     args = args_()
-#     args.set_data_path(
-#         '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
-#         '/home/jiaming/Downloads/dataset/msr-vtt/TestVideo',
-#         '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
-#     )
-#     args.set_glove_file(
-#         '/home/jiaming/Downloads/dataset/glove.6B/glove.6B.50d.txt'
-#     )
+    args.set_data_path(
+        '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
+        '/home/jiaming/Downloads/dataset/msr-vtt/TestVideo',
+        '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
+    )
+    args.set_glove_file(
+        '/home/jiaming/Downloads/dataset/glove.6B/glove.6B.50d.txt'
+    )
     
     if args.mode == 1:
         train(args)
