@@ -138,9 +138,7 @@ if __name__ == '__main__':
     ref_a = str('she read the book because she was interested in world history').split()
     ref_b = str('she was interested in world history because she read the book').split()
     #print(ref_a,ref_b)
-    ctx = mx.cpu()
-    x = nd.random.uniform(shape=(8,2500),ctx=ctx)
-    result = F.sqrt(F.mean(F.square(x-x),axis=1))
-    print(result.asscalar())
+    result = get_meteor(ref_a,ref_b)
+    print(result)
     
     #print(get_meteor(ref_b,hyp))

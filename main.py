@@ -165,7 +165,7 @@ def train(args):
 # In[3]:
 from data_loader import loadGloveModel, embd2word, opencv_loader
 from utils import frames_to_tensor
-
+from metrics import get_meteor,get_bleu
 def evaluation(args):
     caption_length = args.caption_length
     train_model = args.model_file
@@ -186,6 +186,8 @@ def evaluation(args):
         val_dataset = json.load(fp)
     
     result = []
+    meteor = 0
+    bleu = 0
     for video in val_dataset:
         video_file = video + '.mp4'
         video_path = os.path.join(args.val_folder,video_file)
@@ -197,18 +199,30 @@ def evaluation(args):
         label = val_dataset[video]['caption']
         pred = embd2word(output,glove_model,len(label))
 
+        temp_meteor = get_meteor(label,pred)
+        temp_bleu = get_bleu(label,pred)
+
         label = ' '.join(word for word in label)
         pred = ' '.join(word for word in pred)
 
         print("Video :" + str(video) + '/t' + ' ' + label)
         print("Pred: " + pred)
+        
+        print("Bleu: ",temp_bleu, " Meteor: ",temp_meteor)
 
+        meteor += temp_meteor
+        bleu += temp_bleu
+
+        print("-----")
         temp = []
         temp.append(video)
         temp.append(label)
         temp.append(pred)
         result.append(temp)
 
+    length = len(list(val_dataset.keys()))
+
+    print("Average Meteor: ",float(meteor/length)," Average Bleu: ",float(bleu/length))
     with open('val_result.txt', 'w') as f:
         for item in result:
             f.write("%s\n" % item)
