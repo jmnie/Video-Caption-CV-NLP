@@ -38,11 +38,11 @@ class args_(object):
         self.img_size = 240
         self.frames = 30
         self.caption_length = 50
-        self.cuda = 0
+        self.cuda = 1
         self.batch_size = 8
         self.lr = 1e-5
-        self.epochs = 20
-        self.load_pretrain = 0
+        self.epochs = 5
+        self.load_pretrain = 1
         self.save_model = True
         self.model_path = './saved_model'
         self.log_path = './logs'

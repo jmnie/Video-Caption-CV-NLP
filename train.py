@@ -83,7 +83,7 @@ def train(args):
         
         epoch_loss = 0.
         for batch_id, (x,_) in enumerate(train_loader):
-            print(x.shape)
+            #print(x.shape)
             with autograd.record():
                 pred = net(x)
                 batch_loss = loss(pred,_)
@@ -208,16 +208,16 @@ def evaluation(args):
 
 def main():
     args = args_()
-    args.set_data_path(
-        '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
-        '/home/jiaming/Downloads/dataset/msr-vtt/TestVideo',
-        '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
-    )
-    args.set_glove_file(
-        '/home/jiaming/Downloads/dataset/glove.6B/glove.6B.50d.txt'
-    )
-    #train(args)
-    evaluation(args)
+#     args.set_data_path(
+#         '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
+#         '/home/jiaming/Downloads/dataset/msr-vtt/TestVideo',
+#         '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
+#     )
+#     args.set_glove_file(
+#         '/home/jiaming/Downloads/dataset/glove.6B/glove.6B.50d.txt'
+#     )
+    train(args)
+    #evaluation(args)
 
 
 # In[4]:
