@@ -37,7 +37,7 @@ class args_(object):
         self.val_dict = './annotation/val_50d.json'
         self.frames = 30
         self.caption_length = 50
-        self.cuda = 0
+        self.cuda = 1
         self.batch_size = 8
         self.lr = 1e-5
         self.epochs = 20

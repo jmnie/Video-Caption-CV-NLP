@@ -507,7 +507,7 @@ def main():
     # word = 'redblue'
     # best = simple_fuzzy_checking(word,glove_model)
     #print(best)
-    find_nan_in_dataset()
+    find_nan_in_dataset(rootdir='/HDD/dl_proj/msr_vtt')
 
     
 

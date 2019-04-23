@@ -2,6 +2,7 @@ from mxnet.gluon.loss import Loss
 import mxnet.ndarray as F 
 from mxnet import gluon, nd, ndarray
 import mxnet as mx
+from mxnet.base import numeric_types
 
 def _apply_weighting(F, loss, weight=None, sample_weight=None):
 
@@ -28,12 +29,12 @@ class L2Loss(Loss):
 
 class L2Loss_2(Loss):
 
-    def __init__(self, axis=-1, sparse_label=True, from_logits=False, weight=None, batch_axis=2, **kwargs):
+    def __init__(self, axis=-1, sparse_label=True, from_logits=False, weight=1., batch_axis=2, **kwargs):
         super(L2Loss_2, self).__init__(weight, batch_axis, **kwargs)
         self._axis = axis
         self._sparse_label = sparse_label
         self._from_logits = from_logits
-        self.weight = weight
+        self._weight = weight
         self.batch_axis = batch_axis
 
     def hybrid_forward(self, F, pred, label, sample_weight=None):
