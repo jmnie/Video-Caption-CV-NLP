@@ -34,10 +34,11 @@ class L2Loss_2(Loss):
         self._sparse_label = sparse_label
         self._from_logits = from_logits
         self.weight = weight
+        self.batch_axis = batch_axis
 
     def hybrid_forward(self, F, pred, label, sample_weight=None):
 
-        loss = F.mean(F.sqrt(F.square(pred - label)), axis=self._batch_axis)
+        loss = F.sqrt(F.square(pred - label))
         #return F.mean(loss, axis=self._batch_axis, exclude=True)
         return loss
 

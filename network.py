@@ -42,15 +42,15 @@ def test_net():
 class lstm_net(gluon.Block):
     def __init__(self,frames,caption_length,ctx,pretrained=False):
         super(lstm_net,self).__init__()
+        with self.name_scope():
+            self.frames = frames
+            self.caption_length = caption_length
+            self.pretrained = pretrained
+            self.ctx = ctx
 
-        self.frames = frames
-        self.caption_length = caption_length
-        self.pretrained = pretrained
-        self.ctx = ctx
-        
-        self.lstm_1 = rnn.LSTM(hidden_size=100,num_layers=1,layout='NTC',bidirectional=False)
-        self.lstm_2 = rnn.LSTM(hidden_size=100,num_layers=1,layout='NTC',bidirectional=False)
-        self.dense = nn.Dense(self.caption_length*self.caption_length,flatten=True)
+            self.lstm_1 = rnn.LSTM(hidden_size=100,num_layers=1,layout='NTC',bidirectional=False)
+            self.lstm_2 = rnn.LSTM(hidden_size=100,num_layers=1,layout='NTC',bidirectional=False)
+            self.dense = nn.Dense(self.caption_length*self.caption_length,flatten=True)
 
     def forward(self, x):
         if not self.pretrained:

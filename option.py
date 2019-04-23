@@ -38,12 +38,15 @@ class args_(object):
         self.frames = 50
         self.caption_length = 50
         self.cuda = 1
-        self.batch_size = 16
+        self.batch_size = 8
         self.lr = 1e-5
         self.epochs = 20
         self.load_pretrain = 0
         self.save_model = True
-        self.model_path = './save_model/'
+        self.model_path = './saved_model'
+        self.log_path = './logs'
+        self.log_interval = 2000
+
 
 # test = Options().parse()
 # # print(test.add_argument('--batch_size',32))
