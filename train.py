@@ -18,6 +18,7 @@ from metrics import L2Loss_2, L2Loss_cos
 import numpy as np
 import os
 import sys
+import json
 #import multiprocessing
 
 
@@ -82,7 +83,7 @@ def train(args):
         
         epoch_loss = 0.
         for batch_id, (x,_) in enumerate(train_loader):
-      
+            print(x.shape)
             with autograd.record():
                 pred = net(x)
                 batch_loss = loss(pred,_)
@@ -162,19 +163,61 @@ def train(args):
 
 
 # In[3]:
+from data_loader import loadGloveModel, embd2word, opencv_loader
+from utils import frames_to_tensor
+
+def evaluation(args):
+    caption_length = args.caption_length
+    train_model = args.model_file
+    glove_file = args.glove_file
+    glove_model = loadGloveModel(glove_file)
+
+    if args.cuda:
+        ctx=mx.gpu()
+    else:
+        ctx=mx.cpu()
+    
+    net = lstm_net(args.frames,caption_length,ctx)
+    net.load_parameters(train_model,ctx=ctx)
+    
+    print(net)
+
+    with open(args.val_dict,'r') as fp:
+        val_dataset = json.load(fp)
+    
+    sample_key = list(val_dataset.keys())[23]
+    sample_video_file = sample_key + '.mp4'
+    sample_video_path = os.path.join(args.val_folder,sample_video_file)
+
+    frames_ = opencv_loader(sample_video_path,args.frames,img_size=240)
+    
+    frames_ = frames_to_tensor(frames_,ctx)
+    print(frames_.shape)
+    output = net(frames_)
+    output = F.transpose(output).asnumpy()
+    print(output.shape)
+
+    label = val_dataset[sample_key]['caption']
+    pred = embd2word(output,glove_model,len(label))
+
+    print("Validation Video: ",sample_key)
+    print("Pred :",pred)
+    print("Label :",label)
+
 
 
 def main():
     args = args_()
-#     args.set_data_path(
-#         '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
-#         '/home/jiaming/Downloads/dataset/msr-vtt/TestVideo',
-#         '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
-#     )
-#     args.set_glove_file(
-#         '/home/jiaming/Downloads/dataset/glove.6B/glove.6B.50d.txt'
-#     )
-    train(args)
+    args.set_data_path(
+        '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
+        '/home/jiaming/Downloads/dataset/msr-vtt/TestVideo',
+        '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
+    )
+    args.set_glove_file(
+        '/home/jiaming/Downloads/dataset/glove.6B/glove.6B.50d.txt'
+    )
+    #train(args)
+    evaluation(args)
 
 
 # In[4]:

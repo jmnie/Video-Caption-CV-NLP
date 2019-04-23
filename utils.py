@@ -85,6 +85,17 @@ def preprocess_batch(batch):
     batch = F.swapaxes(batch, 0, 1)
     return batch
 
+def frames_to_tensor(frames, ctx, extract=False,vgg=None):
+    '''First converted to tensor'''
+    frames = mx.nd.array(frames.transpose(0, 3, 1, 2).astype('float32'), ctx=ctx)
+    frames = subtract_imagenet_mean_batch(frames)
+    frames = F.expand_dims(frames,axis=0)
+    if extract:
+        new_net = vgg.features[:-1]
+        frames = new_net(frames)   
+
+    return frames
+
 class ToTensor(object):
     def __init__(self, ctx):
         self.ctx = ctx
@@ -223,3 +234,9 @@ class CenterCrop(object):
         x1 = int(round((w - tw) / 2.))
         y1 = int(round((h - th) / 2.))
         return img.crop((x1, y1, x1 + tw, y1 + th))
+
+if __name__ == '__main__':
+    x = np.random.uniform(0,255,size=(30,224,224,3))
+    x = frames_to_tensor(x,mx.cpu())
+    x = x.reshape(x.shape[0],x.shape[1],x.shape[2]*x.shape[3]*x.shape[4])
+    print(x.shape)

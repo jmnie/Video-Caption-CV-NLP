@@ -32,6 +32,17 @@ def load_glove_model(gloveFile):
         dimension = len(embedding)
     return model,dimension
 
+def loadGloveModel(gloveFile):
+    f = open(gloveFile,'r')
+    model = {}
+    for line in f:
+        splitLine = line.split()
+        word = splitLine[0]
+        embedding = np.array([float(val) for val in splitLine[1:]])
+        model[word] = embedding
+    #print("Done.",len(model)," words loaded!")
+    return model
+
 
 def word2embd(words,glove_model,caption_length,dimension):
     embd = np.zeros((caption_length,dimension))
@@ -42,6 +53,33 @@ def word2embd(words,glove_model,caption_length,dimension):
     embd = embd.astype('float32')  
     embd = embd.flatten()
     return embd
+
+def embed_to_word(embd,model):
+    bestWord = None
+    distance = float('inf')
+    for word in model.keys():
+        e=model[word]
+        d = 0
+        for a,b in zip(e,embd):
+            d+=(a-b)*(a-b)
+        if d<distance:
+            distance=d
+            bestWord = word
+
+    assert(bestWord is not None)
+    return (bestWord, distance)
+
+def embd2word(embeds,glove_model,dimension):
+    words = []
+
+    for i in range(dimension):
+        embd = embeds[i]
+        word_distance = embed_to_word(embd,glove_model)
+        best_word = word_distance[0]
+        words.append(best_word)
+    
+    return words
+
 
 def opencv_loader(path,frame_count,img_size=None):
 
