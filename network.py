@@ -61,8 +61,7 @@ class lstm_net(gluon.Block):
         output_1 = self.lstm_1(input_)
         output_2 = self.lstm_2(output_1)
         dense_1 = self.dense(output_2)
-        output = F.reshape(dense_1,(dense_1.shape[0],self.caption_length,self.caption_length))
-        return output
+        return dense_1
 
 
 """Change directly from the ResNet code"""
@@ -208,7 +207,7 @@ class ResNetV1(gluon.HybridBlock):
                 self.features.add(self._make_layer(block, num_layer, channels[i+1],stride, i+1, in_channels=channels[i]))
             self.features.add(nn.GlobalAvgPool3D())
             #self.features.add(nn.Dense(classes, in_units=in_channels))
-            self.features.add(nn.Dense(caption_length*caption_length,in_units=in_channels))
+            self.output = nn.Dense(caption_length*caption_length)
 
 
     def _make_layer(self, block, layers, channels, stride, stage_index, in_channels=0):
@@ -222,7 +221,7 @@ class ResNetV1(gluon.HybridBlock):
 
     def hybrid_forward(self, F, x):
         x = self.features(x)
-        #x = self.output(x)
+        x = self.output(x)
         return x
 
 class ResNetV2(gluon.HybridBlock):
@@ -251,8 +250,7 @@ class ResNetV2(gluon.HybridBlock):
             self.features.add(nn.GlobalAvgPool3D())
             self.features.add(nn.Flatten())
             #self.features.add(nn.Dense(classes, in_units=in_channels))
-            self.features.add(nn.Dense(caption_length*caption_length,in_units=in_channels))
-            
+            self.output = nn.Dense(caption_length*caption_length,in_units=in_channels)            
 
     def _make_layer(self, block, layers, channels, stride, stage_index, in_channels=0):
         layer = nn.HybridSequential(prefix='stage%d_'%stage_index)
@@ -265,8 +263,7 @@ class ResNetV2(gluon.HybridBlock):
 
     def hybrid_forward(self, F, x):
         x = self.features(x)
-        #x = self.output(x)
-        x = F.reshape(x,(x.shape[0],self.caption_length,self.caption_length))
+        x = self.output(x)
         return x
 
 resnet_spec = {18: ('basic_block', [2, 2, 2, 2], [64, 64, 128, 256, 512]),

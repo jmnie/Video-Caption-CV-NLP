@@ -38,7 +38,10 @@ class L2Loss_2(Loss):
 
     def hybrid_forward(self, F, pred, label, sample_weight=None):
 
-        loss = F.sqrt(F.square(pred - label))
+        label = _reshape_like(F, label, pred)
+        loss = F.square(pred-label)
+        loss = _apply_weighting(F, loss, self._weight/2, sample_weight)
+        loss = F.sqrt(F.mean(F.square(pred - label),axis=1))
         #return F.mean(loss, axis=self._batch_axis, exclude=True)
         return loss
 
@@ -135,8 +138,8 @@ if __name__ == '__main__':
     ref_b = str('she was interested in world history because she read the book').split()
     #print(ref_a,ref_b)
     ctx = mx.cpu()
-    x = nd.random.uniform(shape=(16,50),ctx=ctx)
-    mean = F.mean(x).asscalar()
-    print(mean)
+    x = nd.random.uniform(shape=(8,2500),ctx=ctx)
+    result = F.sqrt(F.mean(F.square(x-x),axis=1))
+    print(result.asscalar())
     
     #print(get_meteor(ref_b,hyp))

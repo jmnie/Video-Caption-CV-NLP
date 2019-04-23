@@ -40,6 +40,7 @@ def word2embd(words,glove_model,caption_length,dimension):
             embd[i] = glove_model[words[i]]
             
     embd = embd.astype('float32')  
+    embd = embd.flatten()
     return embd
 
 def opencv_loader(path,frame_count,img_size=None):

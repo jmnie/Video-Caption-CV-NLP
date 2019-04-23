@@ -35,9 +35,9 @@ class args_(object):
         self.train_dict = './annotation/train_50d.json'
         self.test_dict = './annotation/test_50d.json'
         self.val_dict = './annotation/val_50d.json'
-        self.frames = 50
+        self.frames = 30
         self.caption_length = 50
-        self.cuda = 1
+        self.cuda = 0
         self.batch_size = 8
         self.lr = 1e-5
         self.epochs = 20
@@ -47,6 +47,13 @@ class args_(object):
         self.log_path = './logs'
         self.log_interval = 2000
 
+    def set_data_path(self,train_folder,test_folder,val_folder):
+        self.train_folder = train_folder
+        self.test_folder = test_folder
+        self.val_folder = val_folder
+
+    def set_glove_file(self,glove_file):
+        self.glove_file = glove_file
 
 # test = Options().parse()
 # # print(test.add_argument('--batch_size',32))

@@ -6,6 +6,7 @@ from collections import Counter
 import mxnet as mx
 import numpy as np
 import re 
+import os
 
 MAX_WORDS = 100
 VOCAB_SIZE = 2000
@@ -471,16 +472,42 @@ def simple_fuzzy_checking(word,glove_model):
 
     return simliar_word
 
+from data_loader import opencv_loader
+
+def iterate_dataset(dict_path,data_path):
+    with open(dict_path,'r') as fp:
+        dict_ = json.load(fp)
+
+    frame_count = 50
+    for key in dict_:
+        file = key + '.mp4'
+        path = os.path.join(data_path,file)
+        data = opencv_loader(path,frame_count)
+        if np.isnan(data.any()):
+            print(key,data_path)
+    
+def find_nan_in_dataset(train_path='./annotation/train.json',test_path='./annotation/test.json',val_path='./annotation/val.json',rootdir='/home/jiaming/Downloads/dataset/msr-vtt'):
+
+    trainval_data_path = os.path.join(rootdir,'TrainValVideo')
+    test_data_path = os.path.join(rootdir,'TestVideo')
+
+    iterate_dataset(train_path,trainval_data_path)
+    iterate_dataset(test_path,test_data_path)
+    iterate_dataset(val_path,trainval_data_path)
+
+
+
 def main():
     print("--")
     #read_json()
     #process_data(trainval_path='/home/jiaming/Downloads/dataset/msr-vtt/train_val_annotation/train_val_videodatainfo.json',test_path='/home/jiaming/Downloads/dataset/msr-vtt/test_videodatainfo.json')
-    new_annotation()
+    #new_annotation()
     # path = '/HDD/dl_proj/glove/glove.6B.50d.txt'
     # glove_model = loadGloveModel_2(path)
     # word = 'redblue'
     # best = simple_fuzzy_checking(word,glove_model)
     #print(best)
+    find_nan_in_dataset()
 
     
 
