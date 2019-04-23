@@ -1,6 +1,0 @@
-{
-    "python.linting.pylintEnabled": true,
-    "editor.fontSize": 18,
-    "terminal.integrated.fontSize": 15,
-    "python.linting.pylintArgs": ["--generate-members"]
-}
