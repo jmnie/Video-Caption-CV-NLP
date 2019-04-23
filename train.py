@@ -135,7 +135,7 @@ def train(args):
             
             test_loss_batch.append(batch_loss_1)
             
-            if ((e+1)*(batch_id + 1)) % (2*args.log_interval) == 0:
+            if ((e+1)*(batch_id + 1)) % (args.log_interval) == 0:
                 
                 test_loss_file_name = "Epoch_" + str(e) + "_iters_" + str(batch_id + 1) + str(time.ctime()).replace(' ', '_') + "_test_loss" + ".txt"
                 test_loss_path = os.path.join(args.log_path, test_loss_file_name)
@@ -152,8 +152,13 @@ def train(args):
     save_model_path = os.path.join(args.model_path, save_model_filename)
     net.save_parameters(save_model_path)
     print("\nDone, trained model saved at", save_model_path)
-        
-        
+    
+    train_epoch_loss_file_name = 'train_epoch_loss.txt'
+    test_epoch_loss_file_name = 'test_epoch_loss.txt'
+    train_epoch_loss_path = os.path.join(args.log_path,train_epoch_loss_file_name)
+    test_epoch_loss_path = os.path.join(args.log_path,test_epoch_loss_file_name)
+    np.savetxt(train_epoch_loss_path,train_loss)
+    np.savetxt(test_epoch_loss_path,test_loss)
 
 
 # In[3]:
