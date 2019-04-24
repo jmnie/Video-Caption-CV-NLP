@@ -1,5 +1,6 @@
 import argparse
 import os
+import mxnet as mx
 
 class Options():
     def __init__(self):
@@ -38,7 +39,7 @@ class args_(object):
         self.img_size = 224
         self.frames = 100
         self.caption_length = 50
-        self.cuda = 1
+        self.cuda = 0 if len(mx.test_utils.list_gpus())== 0 else 1
         self.batch_size = 4
         self.lr = 1e-4
         self.epochs = 10

@@ -51,10 +51,10 @@ def train(args):
     target_transform = utils.targetCompose([utils.WordToTensor(ctx)])
 
     train_dataset = videoFolder(args.train_folder,args.train_dict, frames, glove_file, 
-                    caption_length, ctx, transform=transform, target_transform=target_transform)
+                    caption_length, ctx, img_size=args.img_size,transform=transform, target_transform=target_transform)
 
     test_dataset = videoFolder(args.test_folder,args.test_dict, frames, glove_file, 
-                        caption_length, ctx, transform=transform, target_transform=target_transform)
+                        caption_length, ctx, img_size=args.img_size,transform=transform, target_transform=target_transform)
 
     train_loader = gluon.data.DataLoader(train_dataset,batch_size=args.batch_size,
                                 last_batch='keep',shuffle=True)
@@ -63,8 +63,8 @@ def train(args):
                                     last_batch='keep',shuffle=False)
 
     loss = L2Loss_2()
-    #net = lstm_net(frames,caption_length,ctx,pretrained=args.load_pretrain)
-    net = resnet18_v2(caption_length=caption_length,ctx=ctx)
+    net = lstm_net(frames,caption_length,ctx,pretrained=args.load_pretrain)
+    #net = resnet18_v2(caption_length=caption_length,ctx=ctx)
                             
             
     net.collect_params().initialize(init=mx.initializer.MSRAPrelu(), ctx=ctx)
@@ -83,7 +83,7 @@ def train(args):
         
         epoch_loss = 0.
         for batch_id, (x,_) in enumerate(train_loader):
-            #print(x.shape)
+            print(x.shape)
             with autograd.record():
                 pred = net(x)
                 batch_loss = loss(pred,_)
@@ -251,14 +251,14 @@ def evaluation(args):
 
 def main():
     args = args_()
-    # args.set_data_path(
-    #     '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
-    #     '/home/jiaming/Downloads/dataset/msr-vtt/TestVideo',
-    #     '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
-    # )
-    # args.set_glove_file(
-    #     '/home/jiaming/Downloads/dataset/glove.6B/glove.6B.50d.txt'
-    # )
+    args.set_data_path(
+        '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
+        '/home/jiaming/Downloads/dataset/msr-vtt/TestVideo',
+        '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
+    )
+    args.set_glove_file(
+        '/home/jiaming/Downloads/dataset/glove.6B/glove.6B.50d.txt'
+    )
     
     if args.mode == 1:
         train(args)

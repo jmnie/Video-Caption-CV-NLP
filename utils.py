@@ -125,8 +125,9 @@ class normalize(object):
         '''
         For all the frames
         '''
-        for _ in range(img.shape[0]):
-            img[_] = subtract_imagenet_mean_batch(img[_])
+        img = subtract_imagenet_mean_batch(img)
+        # for _ in range(img.shape[0]):
+        #     img[_] = subtract_imagenet_mean_batch(img[_])
         return img 
         
 class targetCompose(object):
@@ -236,7 +237,6 @@ class CenterCrop(object):
         return img.crop((x1, y1, x1 + tw, y1 + th))
 
 if __name__ == '__main__':
-    x = np.random.uniform(0,255,size=(30,224,224,3))
-    x = frames_to_tensor(x,mx.cpu())
-    x = x.reshape(x.shape[0],x.shape[1],x.shape[2]*x.shape[3]*x.shape[4])
+    x = mx.nd.random.uniform(0,255,shape=(16,30,3,224,224))
+    x = subtract_imagenet_mean_batch(x)
     print(x.shape)
