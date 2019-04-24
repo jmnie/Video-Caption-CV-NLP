@@ -83,7 +83,7 @@ def train(args):
         
         epoch_loss = 0.
         for batch_id, (x,_) in enumerate(train_loader):
-            print(x.shape)
+            #print(x.shape)
             with autograd.record():
                 pred = net(x)
                 batch_loss = loss(pred,_)
@@ -92,9 +92,9 @@ def train(args):
             batch_loss.backward()
             mx.nd.waitall()
             
-            batch_loss = np.mean(batch_loss.asnumpy())
+            #batch_loss = F.mean(batch_loss.asscalar())
 
-            if ((batch_id == 0) and (e == 0)):
+            if ((batch_id == 0) or (e == 0)):
                 epoch_loss = batch_loss
             else:
                 epoch_loss = (1 - smoothing_constant)*epoch_loss + smoothing_constant*batch_loss
@@ -123,13 +123,12 @@ def train(args):
                             
             with autograd.predict_mode():
                 predict = net(x)
-                batch_loss_1 = loss(pred,_)
+                batch_loss_1 = loss(predict ,_)
                 
-            batch_loss_1 = np.mean(batch_loss_1.asnumpy())
-            #if (batch_id+1) % 30 == 0:
-            #    print("Test Batch:{}, batch_loss:{}".format(batch_id+1, batch_loss_1))
+            #batch_loss_1 = F.mean(batch_loss_1.asscalar())
+            
                 
-            if ((batch_id == 0) and (e == 0)):
+            if ((batch_id == 0) or (e == 0)):
                 epoch_loss_1 = batch_loss_1
             else:
                 epoch_loss_1 = (1 - smoothing_constant)*epoch_loss_1 + smoothing_constant*batch_loss_1
@@ -251,16 +250,18 @@ def evaluation(args):
 
 def main():
     args = args_()
-    args.set_data_path(
-        '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
-        '/home/jiaming/Downloads/dataset/msr-vtt/TestVideo',
-        '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
-    )
-    args.set_glove_file(
-        '/home/jiaming/Downloads/dataset/glove.6B/glove.6B.50d.txt'
-    )
+#     args.set_data_path(
+#         '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
+#         '/home/jiaming/Downloads/dataset/msr-vtt/TestVideo',
+#         '/home/jiaming/Downloads/dataset/msr-vtt/TrainValVideo',
+#     )
+#     args.set_glove_file(
+#         '/home/jiaming/Downloads/dataset/glove.6B/glove.6B.50d.txt'
+#     )
     
-    if args.mode == 1:
+    print("cuda: ", args.cuda)
+    
+    if args.mode == 0:
         train(args)
     else:
         evaluation(args)

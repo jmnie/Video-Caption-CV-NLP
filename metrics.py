@@ -42,7 +42,7 @@ class L2Loss_2(Loss):
         label = _reshape_like(F, label, pred)
         loss = F.square(pred-label)
         loss = _apply_weighting(F, loss, self._weight/2, sample_weight)
-        loss = F.sqrt(F.mean(F.square(pred - label),axis=1))
+        loss = F.mean(F.sqrt(F.square(pred - label),axis=1))
         #return F.mean(loss, axis=self._batch_axis, exclude=True)
         return loss
 

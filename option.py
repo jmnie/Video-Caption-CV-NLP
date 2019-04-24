@@ -49,7 +49,7 @@ class args_(object):
         self.log_path = './logs'
         self.log_interval = 2000
         self.model_file = './saved_model/Epoch_9_iters_800_Tue_Apr_23_15:10:23_2019_.params'
-        self.mode = 1
+        self.mode = 0
 
     def set_data_path(self,train_folder,test_folder,val_folder):
         self.train_folder = train_folder
