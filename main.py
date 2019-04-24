@@ -14,7 +14,7 @@ import utils
 from option import Options, args_
 from multiprocessing import cpu_count
 from network import lstm_net,resnet18_v2
-from metrics import L2Loss_2, L2Loss_cos
+from metrics import L2Loss
 import numpy as np
 import os
 import sys
@@ -57,14 +57,14 @@ def train(args):
                         caption_length, ctx, img_size=args.img_size,transform=transform, target_transform=target_transform)
 
     train_loader = gluon.data.DataLoader(train_dataset,batch_size=args.batch_size,
-                                last_batch='keep',shuffle=True)
+                                last_batch='discard',shuffle=True)
 
     test_loader = gluon.data.DataLoader(test_dataset,batch_size=args.batch_size,
-                                    last_batch='keep',shuffle=False)
+                                    last_batch='discard',shuffle=False)
 
-    loss = L2Loss_2()
-    net = lstm_net(frames,caption_length,ctx,pretrained=args.load_pretrain)
-    #net = resnet18_v2(caption_length=caption_length,ctx=ctx)
+    loss = L2Loss()
+    #net = lstm_net(caption_length,ctx,pretrained=args.load_pretrain)
+    net = resnet18_v2(caption_length=caption_length,ctx=ctx)
                             
             
     net.collect_params().initialize(init=mx.initializer.MSRAPrelu(), ctx=ctx)
@@ -83,16 +83,20 @@ def train(args):
         
         epoch_loss = 0.
         for batch_id, (x,_) in enumerate(train_loader):
-            #print(x.shape)
+
             with autograd.record():
                 pred = net(x)
                 batch_loss = loss(pred,_)
+ 
             
             trainer.step(x.shape[0],ignore_stale_grad=True)
             batch_loss.backward()
             mx.nd.waitall()
-            
-            #batch_loss = F.mean(batch_loss.asscalar())
+
+            #print(batch_loss.shape)
+            batch_loss = nd.mean(batch_loss).asscalar()
+            #print(batch_id,batch_loss)
+
 
             if ((batch_id == 0) or (e == 0)):
                 epoch_loss = batch_loss
@@ -126,7 +130,7 @@ def train(args):
                 batch_loss_1 = loss(predict ,_)
                 
             #batch_loss_1 = F.mean(batch_loss_1.asscalar())
-            
+            batch_loss_1 = nd.mean(batch_loss_1).asscalar()
                 
             if ((batch_id == 0) or (e == 0)):
                 epoch_loss_1 = batch_loss_1

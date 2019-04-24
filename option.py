@@ -37,10 +37,10 @@ class args_(object):
         self.test_dict = './annotation/test_50d.json'
         self.val_dict = './annotation/val_50d.json'
         self.img_size = 224
-        self.frames = 100
+        self.frames = 50
         self.caption_length = 50
         self.cuda = 0 if len(mx.test_utils.list_gpus())== 0 else 1
-        self.batch_size = 4
+        self.batch_size = 16
         self.lr = 1e-4
         self.epochs = 10
         self.load_pretrain = 0

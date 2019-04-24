@@ -125,7 +125,9 @@ class videoFolder(data.Dataset):
         self.target_transform = target_transform
         self.img_size = img_size
         self.frames = frames
+
         glove_model,dimension = load_glove_model(gloveFile)
+        
         self.glove_model = glove_model
         self.dimension = dimension
         self.caption_length = caption_length
