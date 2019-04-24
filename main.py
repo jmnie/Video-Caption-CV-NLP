@@ -63,8 +63,8 @@ def train(args):
                                     last_batch='keep',shuffle=False)
 
     loss = L2Loss_2()
-    net = lstm_net(frames,caption_length,ctx,pretrained=args.load_pretrain)
-    #net = resnet18_v2(caption_length=caption_length,ctx=ctx)
+    #net = lstm_net(frames,caption_length,ctx,pretrained=args.load_pretrain)
+    net = resnet18_v2(caption_length=caption_length,ctx=ctx)
                             
             
     net.collect_params().initialize(init=mx.initializer.MSRAPrelu(), ctx=ctx)
